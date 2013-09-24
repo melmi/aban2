@@ -139,16 +139,16 @@ private:
     }
 
 public:
-    mesh(Json::Value &root)
+    mesh(Json::Value *root)
     {
-        delta = root.get("delta", "1").asDouble();
+        delta = root->get("delta", "1").asDouble();
 
-        ndir[0] = root.get("ni", "1").asInt();
-        ndir[1] = root.get("nj", "1").asInt();
-        ndir[2] = root.get("nk", "1").asInt();
+        ndir[0] = root->get("ni", "1").asInt();
+        ndir[1] = root->get("nj", "1").asInt();
+        ndir[2] = root->get("nk", "1").asInt();
 
         std::string str;
-        Json::Value codes_val = root["codes"];
+        Json::Value codes_val = (*root)["codes"];
         for (int k = 0; k < ndir[2]; ++k)
         {
             Json::Value codesk = codes_val[k];

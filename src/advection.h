@@ -21,9 +21,8 @@ public:
     {
         double *grad = new double[n];
         for (size_t i = 1; i < n - 1; ++i)
-        {
             grad[i] = (phi[i + 1] - phi[i - 1]) / (2.*dx);
-        }
+
         grad[0] = (phi[1] - phi[0]) / dx;
         grad[n - 1] = (phi[n - 1] - phi[n - 2]) / dx;
 
@@ -66,21 +65,21 @@ public:
         delete[] mass;
     }
 
-    static void advect_ustar(domain d)
+    static void advect_ustar(domain *d)
     {
 
         for (size_t ieq = 0; ieq < 3; ++ieq)
-            for (size_t irow = 0; irow < d.nrows[ieq]; ++irow)
+            for (size_t irow = 0; irow < d->nrows[ieq]; ++irow)
             {
-                mesh_row *row = d.rows[ieq] + irow;
-                double *u = d.extract_scalars(*row, d.u[ieq]);
+                mesh_row *row = d->rows[ieq] + irow;
+                double *u = d->extract_scalars(row, d->u[ieq]);
                 for (size_t icmpnt = 0; icmpnt < 3; ++icmpnt)
                 {
-                    double *cmpnt = d.extract_scalars(*row, d.ustar[icmpnt]);
-                    bcond *start_bc = d.boundaries[row->start_bc].velbc + icmpnt;
-                    bcond *end_bc = d.boundaries[row->end_bc].velbc + icmpnt;
-                    advect(row->n, cmpnt, u, d.dt, d.delta, *start_bc, *end_bc);
-                    d.insert_scalars(*row, d.ustar[icmpnt], cmpnt);
+                    double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
+                    bcond *start_bc = d->boundaries[row->start_bc].velbc + icmpnt;
+                    bcond *end_bc = d->boundaries[row->end_bc].velbc + icmpnt;
+                    advect(row->n, cmpnt, u, d->dt, d->delta, *start_bc, *end_bc);
+                    d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                     delete[] cmpnt;
                 }
                 delete[] u;

@@ -99,22 +99,22 @@ public:
         reader.parse(ifile, root, false);
         ifile.close();
 
-        domain *result = new domain(root);
+        domain *result = new domain(&root);
         // msh = mesh::from_json(root);
 
         return result;
     }
 
-    domain(Json::Value &root): mesh(root)
+    domain(Json::Value *root): mesh(root)
     {
-        dt = root.get("dt", 1).asDouble();
-        tend = root.get("tend", 1).asDouble();
-        rho = root.get("rho", 1000).asDouble();
-        mu = root.get("mu", 1e-3).asDouble();
-        step_write = root.get("step_write", 1).asInt();
+        dt = root->get("dt", 1).asDouble();
+        tend = root->get("tend", 1).asDouble();
+        rho = root->get("rho", 1000).asDouble();
+        mu = root->get("mu", 1e-3).asDouble();
+        step_write = root->get("step_write", 1).asInt();
 
         boundaries = new flow_boundary[256];
-        Json::Value boundaries_val = root["boundaries"];
+        Json::Value boundaries_val = (*root)["boundaries"];
         auto bnames = boundaries_val.getMemberNames();
         for (auto & x : bnames)
         {
@@ -202,59 +202,59 @@ public:
         file.close();
     }
 
-    double *extract_scalars(mesh_row &row, double *var)
+    double *extract_scalars(mesh_row *row, double *var)
     {
-        double *result = new double[row.n];
-        size_t s = row.start[row.ii], e = row.end[row.ii];
+        double *result = new double[row->n];
+        size_t s = row->start[row->ii], e = row->end[row->ii];
         for (size_t i = s; i <= e; ++i)
         {
-            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
             result[i - s] = var[ix];
         }
         return result;
     }
 
-    void insert_scalars(mesh_row &row, double *var, double *row_vals)
+    void insert_scalars(mesh_row *row, double *var, double *row_vals)
     {
-        size_t s = row.start[row.ii], e = row.end[row.ii];
+        size_t s = row->start[row->ii], e = row->end[row->ii];
         for (size_t i = s; i <= e; ++i)
         {
-            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
             var[ix] = row_vals[i - s];
         }
     }
 
-    vector *extract_vectors(mesh_row &row, double **var)
+    vector *extract_vectors(mesh_row *row, double **var)
     {
-        vector *result = new vector[row.n];
-        size_t s = row.start[row.ii], e = row.end[row.ii];
+        vector *result = new vector[row->n];
+        size_t s = row->start[row->ii], e = row->end[row->ii];
         for (size_t i = s; i <= e; ++i)
         {
-            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
             result[i - s] = vector::from_data(var, ix);
         } return result;
     }
 
-    void insert_vectors(mesh_row &row, double **var, vector *row_vals)
+    void insert_vectors(mesh_row *row, double **var, vector *row_vals)
     {
-        size_t s = row.start[row.ii], e = row.end[row.ii];
+        size_t s = row->start[row->ii], e = row->end[row->ii];
         for (size_t i = s; i <= e; ++i)
         {
-            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
-            var[0][ix] = row_vals[i - row.start[row.ii]].x;
-            var[1][ix] = row_vals[i - row.start[row.ii]].y;
-            var[2][ix] = row_vals[i - row.start[row.ii]].z;
+            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
+            var[0][ix] = row_vals[i - row->start[row->ii]].x;
+            var[1][ix] = row_vals[i - row->start[row->ii]].y;
+            var[2][ix] = row_vals[i - row->start[row->ii]].z;
         }
     }
 
-    size_t* get_row_idxs(mesh_row &row)
+    size_t* get_row_idxs(mesh_row *row)
     {
-        size_t *row_idxs = new size_t[row.n];
-        size_t s = row.start[row.ii], e = row.end[row.ii];
+        size_t *row_idxs = new size_t[row->n];
+        size_t s = row->start[row->ii], e = row->end[row->ii];
 
         for (size_t i = s; i <= e; ++i)
         {
-            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
             row_idxs[i-s] = ix;
         }
 

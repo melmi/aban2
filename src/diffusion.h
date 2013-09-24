@@ -71,20 +71,20 @@ public:
         delete cc;
     }
 
-    static void diffuse_ustar(domain d)
+    static void diffuse_ustar(domain *d)
     {
 
         for (size_t ieq = 0; ieq < 3; ++ieq)
-            for (size_t irow = 0; irow < d.nrows[ieq]; ++irow)
+            for (size_t irow = 0; irow < d->nrows[ieq]; ++irow)
             {
-                mesh_row *row = d.rows[ieq] + irow;
+                mesh_row *row = d->rows[ieq] + irow;
                 for (size_t icmpnt = 0; icmpnt < 3; ++icmpnt)
                 {
-                    double *cmpnt = d.extract_scalars(*row, d.ustar[icmpnt]);
-                    bcond *start_bc = d.boundaries[row->start_bc].velbc + icmpnt;
-                    bcond *end_bc = d.boundaries[row->end_bc].velbc + icmpnt;
-                    diffuse(row->n, cmpnt, d.mu, d.dt, d.delta, *start_bc, *end_bc);
-                    d.insert_scalars(*row, d.ustar[icmpnt], cmpnt);
+                    double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
+                    bcond *start_bc = d->boundaries[row->start_bc].velbc + icmpnt;
+                    bcond *end_bc = d->boundaries[row->end_bc].velbc + icmpnt;
+                    diffuse(row->n, cmpnt, d->mu, d->dt, d->delta, *start_bc, *end_bc);
+                    d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                     delete[] cmpnt;
                 }
             }
