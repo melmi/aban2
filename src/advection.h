@@ -32,6 +32,7 @@ public:
     static void advect(size_t n, double *phi, double *u, double dt, double dx, bcond startbc, bcond endbc)
     {
         double flux;
+
         double *grad = get_grad(n, phi, dx);
         double *mass = new double[n];
 
@@ -49,15 +50,15 @@ public:
             mass[ii] += flux;
         }
 
-        if (startbc.type == bctype::neumann)
+        if (startbc.type == bctype::dirichlet)
             mass[0] += startbc.val * dt;
         else
-            mass[0] += u[0] * dt * phi[0];
+            mass[0] += phi[0] * u[0] * dt;
 
-        if (endbc.type == bctype::neumann)
-            mass[n - 1] += endbc.val * dt;
+        if (endbc.type == bctype::dirichlet)
+            mass[n - 1] -= endbc.val * dt;
         else
-            mass[n - 1] += u[n - 1] * dt * phi[n - 1];
+            mass[n - 1] -= phi[n - 1] * u[n - 1] * dt;
 
         for (size_t i = 0; i < n; ++i) phi[i] = mass[i] / dx;
 
@@ -67,13 +68,12 @@ public:
 
     static void advect_ustar(domain *d)
     {
-
-        for (size_t ieq = 0; ieq < 3; ++ieq)
-            for (size_t irow = 0; irow < d->nrows[ieq]; ++irow)
+        for (size_t dir = 0; dir < NDIRS; ++dir)
+            for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             {
-                mesh_row *row = d->rows[ieq] + irow;
-                double *u = d->extract_scalars(row, d->u[ieq]);
-                for (size_t icmpnt = 0; icmpnt < 3; ++icmpnt)
+                mesh_row *row = d->rows[dir] + irow;
+                double *u = d->extract_scalars(row, d->u[dir]);
+                for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
                 {
                     double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
                     bcond *start_bc = d->boundaries[row->start_bc].velbc + icmpnt;

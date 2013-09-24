@@ -18,7 +18,7 @@ namespace aban2
 
 enum class bctype
 {
-    neumann, drichle
+    neumann, dirichlet
 };
 
 struct bcond
@@ -39,14 +39,14 @@ struct flow_boundary
 
         for (int i = 0; i < 3; ++i)
         {
-            velbc[i].type = bctype::drichle;
+            velbc[i].type = bctype::dirichlet;
             velbc[i].val = v.components[i];
         }
     }
 
     void set_pressure_bc(double val)
     {
-        pbc.type = bctype::drichle;
+        pbc.type = bctype::dirichlet;
         pbc.val = val;
 
         for (int i = 0; i < 3; ++i)

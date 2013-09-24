@@ -15,14 +15,19 @@
 #include <list>
 #include "vector.h"
 
-using namespace std;
+//#define THREE_D
+#ifdef THREE_D
+#define NDIRS 3
+#else
+#define NDIRS 2
+#endif
 
 namespace aban2
 {
 
 struct mesh_row
 {
-    // ii is the principal direction of the row. jj and kk are its other directions
+    // ii is the principal direction of the row. jj and kk are its other directions.
     size_t ii, jj, kk;
     size_t n;
     size_t start[3], end[3];
@@ -45,7 +50,6 @@ public:
         return k * ndir[1] + j * ndir[0] + i;
     }
 
-
     inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk)
     {
         static size_t ijk[3];
@@ -58,8 +62,8 @@ public:
     inline void get_dirs(size_t dir, size_t &ii, size_t &jj, size_t &kk)
     {
         ii = dir;
-        jj = (dir + 1) / 3;
-        kk = (dir + 2) / 3;
+        jj = (dir + 1) % 3;
+        kk = (dir + 2) % 3;
     }
 
     bool exists(size_t i, size_t j, size_t k)
@@ -74,7 +78,6 @@ private:
         bool inside = false;
         mesh_row row;
         std::vector<mesh_row> v;
-
         size_t ii , jj, kk;
         get_dirs(dir, ii, jj, kk);
 
@@ -83,17 +86,7 @@ private:
                 for (size_t i = 0; i < ndir[ii]; ++i)
                 {
                     size_t x = idx(i, j, k, ii, jj, kk);
-                    if (inside)
-                    {
-                        if (codes[x] == INSIDE) continue;
-                        inside = false;
-                        row.end[ii] = i - 1;
-                        row.end[jj] = j;
-                        row.end[kk] = k;
-                        row.start_bc = codes[x];
-                        v.push_back(row);
-                    }
-                    else
+                    if (!inside)
                     {
                         if (codes[x] != INSIDE) continue;
                         inside = true;
@@ -104,6 +97,17 @@ private:
                         row.start[jj] = j;
                         row.start[kk] = k;
                         row.start_bc = codes[idx(i - 1, j, k, ii, jj, kk)];
+                    }
+                    else
+                    {
+                        if (codes[x] == INSIDE) continue;
+                        inside = false;
+                        row.end[ii] = i - 1;
+                        row.end[jj] = j;
+                        row.end[kk] = k;
+                        row.n = row.end[ii] - row.start[ii] + 1;
+                        row.start_bc = codes[x];
+                        v.push_back(row);
                     }
                 }
 
@@ -125,16 +129,16 @@ private:
                     if (codes[x] == INSIDE)
                         idxs[x] = ii++;
                 }
-        n = ii - 1;
+        n = ii;
     }
 
     void init()
     {
-        generate_rows(0);
-        generate_rows(1);
-#ifdef THREE_D
-        generate_krows(2);
-#endif
+        nrows[0] = nrows[1] = nrows[2] = 0;
+
+        for (int dir = 0; dir < NDIRS; ++dir)
+            generate_rows(dir);
+
         set_idxs();
     }
 
@@ -149,11 +153,11 @@ public:
 
         std::string str;
         Json::Value codes_val = (*root)["codes"];
-        for (int k = 0; k < ndir[2]; ++k)
+        for (size_t k = 0; k < ndir[2]; ++k)
         {
-            Json::Value codesk = codes_val[k];
-            for (int j = 0; j < ndir[1]; ++j)
-                str += codesk[j].asString();
+            Json::Value codesk = codes_val[ndir[2] - k - 1];
+            for (size_t j = 0; j < ndir[1]; ++j)
+                str += codesk[ndir[1] - j - 1].asString();
         }
 
         codes = new char[str.length() + 1];
