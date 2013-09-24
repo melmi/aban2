@@ -26,15 +26,15 @@ class pressure
         {
             size_t ix = row_idxs[i];
             v.push_back(triplet(ix, row_idxs[i - 2], 1.0));
-            v.push_back(triplet(ix, ix, 2.0));
+            v.push_back(triplet(ix, ix, -2.0));
             v.push_back(triplet(ix, row_idxs[i + 2], 1.0));
         }
     }
 
 public:
-    typedef Eigen::SparseMatrix<double, Eigen::ColMajor, size_t> sparse_matrix;
+    typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> sparse_matrix;
 
-    sparse_matrix *void make_pressure_matrix(domain d)
+    sparse_matrix *make_pressure_matrix(domain d)
     {
         triplet_vector v(d.n * 5);
 
@@ -42,13 +42,13 @@ public:
             for (size_t irow = 0; irow < d.nrows[idir]; ++irow)
             {
                 mesh_row *row = d.rows[idir] + irow;
-                size_t *row_idxs d.get_row_idxs(row);
-                add_pressure_row(row->n, row_idxs, v);
+                size_t *row_idxs = d.get_row_idxs(*row);
+                add_pressure_row(row->n, row_idxs, d.delta, v);
                 delete[] row_idxs;
             }
 
-        sparse_matrix m = new sparse_matrix(d.n, d.n);
-        m->setFromTriplets(tripletList.begin(), tripletList.end());
+        sparse_matrix* m = new sparse_matrix(d.n, d.n);
+        m->setFromTriplets(v.begin(), v.end());
         return m;
     }
 };

@@ -22,10 +22,19 @@ namespace aban2
 
 struct mesh_row
 {
-    size_t ii, jj, kk;
+    // ii is the principal direction of the row. jj and kk are its other directions
+    size_t ii, jj, kk; 
     size_t n;
     size_t start[3], end[3];
     char start_bc, end_bc;
+    size_t *idxs;
+
+    mesh_row(): idxs(nullptr) {}
+
+    ~mesh_row()
+    {
+        if (idxs != nullptr) delete[] idxs;
+    }
 };
 
 class mesh

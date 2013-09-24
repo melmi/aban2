@@ -255,7 +255,7 @@ public:
         for (size_t i = s; i <= e; ++i)
         {
             size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
-            row_idxs[i-s] = row_vals[i];
+            row_idxs[i-s] = ix;
         }
 
         return row_idxs;
