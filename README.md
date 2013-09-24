@@ -1,10 +1,9 @@
-# ABAN II
+Aban2
+=====
 
 A hydrodynamic free-surface solver.
 
-## Prerequisites
-
-Aban ii internally uses jsoncpp and eigen 3. To install them in ubuntu just type:
+# Prerequisites
 
   sudo apt-get install libjsoncpp-dev libeigen3-dev
 

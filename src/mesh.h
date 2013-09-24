@@ -20,8 +20,6 @@ using namespace std;
 namespace aban2
 {
 
-class mesh;
-
 struct mesh_row
 {
     // ii is the principal direction of the row. jj and kk are its other directions
@@ -29,16 +27,6 @@ struct mesh_row
     size_t n;
     size_t start[3], end[3];
     char start_bc, end_bc;
-    size_t *idxs;
-
-    void set_idxs(mesh &m);
-
-    mesh_row(): idxs(nullptr) {}
-
-    ~mesh_row()
-    {
-        if (idxs != nullptr) delete[] idxs;
-    }
 };
 
 class mesh
@@ -103,7 +91,6 @@ private:
                         row.end[jj] = j;
                         row.end[kk] = k;
                         row.start_bc = codes[x];
-                        row.set_idxs(*this);
                         v.push_back(row);
                     }
                     else
@@ -175,19 +162,6 @@ public:
         init();
     }
 };
-
-void mesh_row::set_idxs(mesh &m)
-{
-    idxs = new size_t[n];
-    size_t s = start[ii], e = end[ii];
-
-    for (size_t i = s; i <= e; ++i)
-    {
-        size_t ix = m.idxs[m.idx(i, start[jj], start[kk], ii, jj, kk)];
-        idxs[i - s] = ix;
-    }
-}
-
 
 }
 

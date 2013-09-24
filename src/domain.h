@@ -247,6 +247,20 @@ public:
         }
     }
 
+    size_t* get_row_idxs(mesh_row &row)
+    {
+        size_t *row_idxs = new size_t[row.n];
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+
+        for (size_t i = s; i <= e; ++i)
+        {
+            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            row_idxs[i-s] = ix;
+        }
+
+        return row_idxs;
+    }
+
 private:
     void create_vars()
     {
