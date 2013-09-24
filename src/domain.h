@@ -205,34 +205,60 @@ public:
     double *extract_scalars(mesh_row &row, double *var)
     {
         double *result = new double[row.n];
-        for (size_t i = row.start[row.ii]; i <= row.end[row.ii]; ++i)
-            result[i] = var[idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)]];
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+        for (size_t i = s; i <= e; ++i)
+        {
+            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            result[i - s] = var[ix];
+        }
         return result;
     }
 
     void insert_scalars(mesh_row &row, double *var, double *row_vals)
     {
-        for (size_t i = row.start[row.ii]; i <= row.end[row.ii]; ++i)
-            var[idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)]] = row_vals[i];
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+        for (size_t i = s; i <= e; ++i)
+        {
+            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            var[ix] = row_vals[i - s];
+        }
     }
 
     vector *extract_vectors(mesh_row &row, double **var)
     {
         vector *result = new vector[row.n];
-        for (size_t i = row.start[row.ii]; i <= row.end[row.ii]; ++i)
-            result[i] = vector::from_data(var, idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)]);
-        return result;
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+        for (size_t i = s; i <= e; ++i)
+        {
+            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            result[i - s] = vector::from_data(var, ix);
+        } return result;
     }
 
     void insert_vectors(mesh_row &row, double **var, vector *row_vals)
     {
-        for (size_t i = row.start[row.ii]; i <= row.end[row.ii]; ++i)
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+        for (size_t i = s; i <= e; ++i)
         {
             size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
-            var[0][ix] = row_vals[i].x;
-            var[1][ix] = row_vals[i].y;
-            var[2][ix] = row_vals[i].z;
+            var[0][ix] = row_vals[i - row.start[row.ii]].x;
+            var[1][ix] = row_vals[i - row.start[row.ii]].y;
+            var[2][ix] = row_vals[i - row.start[row.ii]].z;
         }
+    }
+
+    size_t* get_row_idxs(mesh_row &row)
+    {
+        size_t *row_idxs = new size_t[row.n];
+        size_t s = row.start[row.ii], e = row.end[row.ii];
+
+        for (size_t i = s; i <= e; ++i)
+        {
+            size_t ix = idxs[idx(i, row.start[row.jj], row.start[row.kk], row.ii, row.jj, row.kk)];
+            row_idxs[i-s] = row_vals[i];
+        }
+
+        return row_idxs;
     }
 
 private:

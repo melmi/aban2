@@ -78,7 +78,6 @@ public:
             for (size_t irow = 0; irow < d.nrows[ieq]; ++irow)
             {
                 mesh_row *row = d.rows[ieq] + irow;
-                double *u = d.extract_scalars(*row, d.u[ieq]);
                 for (size_t icmpnt = 0; icmpnt < 3; ++icmpnt)
                 {
                     double *cmpnt = d.extract_scalars(*row, d.ustar[icmpnt]);
@@ -88,7 +87,6 @@ public:
                     d.insert_scalars(*row, d.ustar[icmpnt], cmpnt);
                     delete[] cmpnt;
                 }
-                delete[] u;
             }
     }
 };
