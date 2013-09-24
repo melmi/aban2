@@ -20,14 +20,14 @@ class pressure
     typedef Eigen::Triplet<double> triplet;
     typedef std::vector<triplet> triplet_vector;
 
-    static void add_pressure_row(size_t n, size_t *row_idxs, double dx, triplet_vector &v)
+    static void add_pressure_row(mesh_row& row, double dx, triplet_vector &v)
     {
-        for (size_t i = 2; i < n - 2; ++i)
+        for (size_t i = 2; i < row.n - 2; ++i)
         {
-            size_t ix = row_idxs[i];
-            v.push_back(triplet(ix, row_idxs[i - 2], 1.0));
+            size_t ix = row.idxs[i];
+            v.push_back(triplet(ix, row.idxs[i - 2], 1.0));
             v.push_back(triplet(ix, ix, -2.0));
-            v.push_back(triplet(ix, row_idxs[i + 2], 1.0));
+            v.push_back(triplet(ix, row.idxs[i + 2], 1.0));
         }
     }
 
@@ -42,9 +42,7 @@ public:
             for (size_t irow = 0; irow < d.nrows[idir]; ++irow)
             {
                 mesh_row *row = d.rows[idir] + irow;
-                size_t *row_idxs = d.get_row_idxs(*row);
-                add_pressure_row(row->n, row_idxs, d.delta, v);
-                delete[] row_idxs;
+                add_pressure_row(*row, d.delta, v);
             }
 
         sparse_matrix* m = new sparse_matrix(d.n, d.n);

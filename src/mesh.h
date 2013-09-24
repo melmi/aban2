@@ -20,14 +20,18 @@ using namespace std;
 namespace aban2
 {
 
+class mesh;
+
 struct mesh_row
 {
     // ii is the principal direction of the row. jj and kk are its other directions
-    size_t ii, jj, kk; 
+    size_t ii, jj, kk;
     size_t n;
     size_t start[3], end[3];
     char start_bc, end_bc;
     size_t *idxs;
+
+    void set_idxs(mesh &m);
 
     mesh_row(): idxs(nullptr) {}
 
@@ -56,11 +60,11 @@ public:
 
     inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk)
     {
-        static size_t true_ijk[3];
-        true_ijk[ii] = i;
-        true_ijk[jj] = j;
-        true_ijk[kk] = k;
-        return idx(true_ijk[0], true_ijk[1], true_ijk[2]);
+        static size_t ijk[3];
+        ijk[ii] = i;
+        ijk[jj] = j;
+        ijk[kk] = k;
+        return idx(ijk[0], ijk[1], ijk[2]);
     }
 
     inline void get_dirs(size_t dir, size_t &ii, size_t &jj, size_t &kk)
@@ -99,6 +103,7 @@ private:
                         row.end[jj] = j;
                         row.end[kk] = k;
                         row.start_bc = codes[x];
+                        row.set_idxs(*this);
                         v.push_back(row);
                     }
                     else
@@ -170,6 +175,19 @@ public:
         init();
     }
 };
+
+void mesh_row::set_idxs(mesh &m)
+{
+    idxs = new size_t[n];
+    size_t s = start[ii], e = end[ii];
+
+    for (size_t i = s; i <= e; ++i)
+    {
+        size_t ix = m.idxs[m.idx(i, start[jj], start[kk], ii, jj, kk)];
+        idxs[i - s] = ix;
+    }
+}
+
 
 }
 
