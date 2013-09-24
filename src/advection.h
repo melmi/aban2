@@ -51,12 +51,12 @@ public:
         }
 
         if (startbc.type == bctype::dirichlet)
-            mass[0] += startbc.val * dt;
+            mass[0] += startbc.val * u[0] * dt;
         else
             mass[0] += phi[0] * u[0] * dt;
 
         if (endbc.type == bctype::dirichlet)
-            mass[n - 1] -= endbc.val * dt;
+            mass[n - 1] -= endbc.val * u[0] * dt;
         else
             mass[n - 1] -= phi[n - 1] * u[n - 1] * dt;
 
