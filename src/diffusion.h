@@ -54,15 +54,27 @@ public:
 
         double *aa = new double[n], *bb = new double[n], *cc = new double[n];
 
-        for (int i = 0; i < n; ++i)
+        for (size_t i = 0; i < n; ++i)
         {
-            aa[i] = cc[i] = -coeff;
-            bb[i] = 1. + 2.*coeff;
+            aa[i] = cc[i] = coeff;
+            bb[i] = 1.0 - 2.0 * coeff;
         }
 
-        // TODO: set boundary conditions here
-        bb[0] = bb[n - 1] = 1. + coeff;
-        // aa[0] = cc[n - 1] = 0;
+        if (startbc.type == bctype::dirichlet)
+        {
+            bb[0] = 1.0 - 3.0 * coeff;
+            phi[0] += -coeff * 2.0 * startbc.val;
+        }
+        else
+            bb[0] = 1.0 - coeff;
+
+        if (endbc.type == bctype::dirichlet)
+        {
+            bb[n - 1] = 1.0 - 3.0 * coeff;
+            phi[n - 1] += -coeff * 2.0 * endbc.val;
+        }
+        else
+            bb[n - 1] = 1.0 - coeff;
 
         solve_tridiagonal_in_place_destructive(phi, n, aa, bb, cc);
 
@@ -74,11 +86,11 @@ public:
     static void diffuse_ustar(domain *d)
     {
 
-        for (size_t ieq = 0; ieq < 3; ++ieq)
-            for (size_t irow = 0; irow < d->nrows[ieq]; ++irow)
+        for (size_t dir = 0; dir < NDIR; ++dir)
+            for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             {
-                mesh_row *row = d->rows[ieq] + irow;
-                for (size_t icmpnt = 0; icmpnt < 3; ++icmpnt)
+                mesh_row *row = d->rows[dir] + irow;
+                for (size_t icmpnt = 0; icmpnt < NDIR; ++icmpnt)
                 {
                     double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
                     bcond *start_bc = d->boundaries[row->start_bc].velbc + icmpnt;

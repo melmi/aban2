@@ -20,7 +20,7 @@ int main(int argc, char const *argv[])
 
      adv_test1(d);
 
-     advection::advect_ustar(d);
+     diffusion::diffuse_ustar(d);
 
      d->write_vtk("/home/mohammad/Desktop/x.vtk");
 
