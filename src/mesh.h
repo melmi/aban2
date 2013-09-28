@@ -106,7 +106,7 @@ private:
                         row.end[jj] = j;
                         row.end[kk] = k;
                         row.n = row.end[ii] - row.start[ii] + 1;
-                        row.start_bc = codes[x];
+                        row.end_bc = codes[x];
                         v.push_back(row);
                     }
                 }

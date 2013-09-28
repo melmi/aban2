@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <jsoncpp/json/json.h>
 #include "mesh.h"
 #include "domain.h"
@@ -10,19 +11,26 @@
 using namespace std;
 using namespace aban2;
 
+string get_fname(string path, size_t step)
+{
+    stringstream s;
+    s << path << step << ".vtk";
+    return s.str();
+}
+
 int main(int argc, char const *argv[])
 {
-    domain *d = domain::create_from_file("mesh/slope.json");
-    cout << NDIRS << endl;
+    domain *d = domain::create_from_file("mesh/cavity100x100.json");
 
-    cout << d->nrows[0] << "    " << d->rows[0][0].start[0] << endl
-         << d->nrows[1] << "    " << d->rows[1][0].start[0] << endl;
+    diff_test1(d);
 
-     adv_test1(d);
-
-     diffusion::diffuse_ustar(d);
-
-     d->write_vtk("/home/mohammad/Desktop/x.vtk");
+    d->write_vtk(get_fname( "out/out", 0));
+    for (int it = 0; it < 100; ++it)
+    {
+        cout << "step " << it << endl;
+        diffusion::diffuse_ustar(d);
+        d->write_vtk(get_fname( "out/out", it + 1));
+    }
 
     return 0;
 }
