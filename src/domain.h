@@ -247,7 +247,7 @@ public:
         }
     }
 
-    size_t* get_row_idxs(mesh_row *row)
+    size_t *get_row_idxs(mesh_row *row)
     {
         size_t *row_idxs = new size_t[row->n];
         size_t s = row->start[row->ii], e = row->end[row->ii];
@@ -255,10 +255,35 @@ public:
         for (size_t i = s; i <= e; ++i)
         {
             size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            row_idxs[i-s] = ix;
+            row_idxs[i - s] = ix;
         }
 
         return row_idxs;
+    }
+
+    void *create_var(size_t dim)
+    {
+        if (dim == 1)
+        {
+            double *result = new double[n];
+            std::fill_n(result, n, 0);
+            return result;
+        }
+        else
+        {
+            void **result = new void*[3];
+            for (int i = 0; i < 3; ++i)
+                result[i] = create_var(dim - 1);
+            return result;
+        }
+    }
+
+    void delete_var(size_t dim, void *v)
+    {
+        if (dim > 1)
+            for (int i = 0; i < 3; ++i)
+                delete_var(dim - 1, ((double **)v)[i]);
+        delete[] v;
     }
 
 private:
@@ -269,16 +294,10 @@ private:
             switch (v.dim)
             {
             case vardim::scalar:
-                *v.data.scalar = new double[n];
-                std::fill_n(*v.data.scalar, n, 0);
+                *v.data.scalar = (double *)create_var(1);
                 break;
             case vardim::vector:
-                *v.data.vec = new double*[3];
-                for (int i = 0; i < 3; ++i)
-                {
-                    (*v.data.vec)[i] = new double[n];
-                    std::fill_n((*v.data.vec)[i], n, 0);
-                }
+                *v.data.vec = (double **)create_var(2);
                 break;
             }
         }
@@ -291,13 +310,10 @@ private:
             switch (v.dim)
             {
             case vardim::scalar:
-                delete[] *v.data.scalar;
+                delete_var(1, *v.data.scalar);
                 break;
             case vardim::vector:
-                delete[] (*v.data.vec)[0];
-                delete[] (*v.data.vec)[1];
-                delete[] (*v.data.vec)[2];
-                delete[] *v.data.vec;
+                delete_var(2, *v.data.vec);
                 break;
             }
         }

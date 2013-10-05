@@ -9,6 +9,7 @@
 #define _ADVECTION_H_
 
 #include "domain.h"
+#include "gradient.h"
 #include <algorithm>
 
 namespace aban2
@@ -17,23 +18,11 @@ namespace aban2
 class advection
 {
 public:
-    static double *get_grad(size_t n, double *phi, double dx)
-    {
-        double *grad = new double[n];
-        for (size_t i = 1; i < n - 1; ++i)
-            grad[i] = (phi[i + 1] - phi[i - 1]) / (2.*dx);
-
-        grad[0] = (phi[1] - phi[0]) / dx;
-        grad[n - 1] = (phi[n - 1] - phi[n - 2]) / dx;
-
-        return grad;
-    }
-
     static void advect(size_t n, double *phi, double *u, double dt, double dx, bcond startbc, bcond endbc)
     {
         double flux;
 
-        double *grad = get_grad(n, phi, dx);
+        double *grad = gradient::get_1d_row(n, phi, dx, startbc, endbc);
         double *mass = new double[n];
 
         for (size_t i = 0; i < n; ++i) mass[i] = phi[i] * dx;
