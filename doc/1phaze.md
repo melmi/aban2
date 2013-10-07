@@ -19,7 +19,7 @@ $$
 \begin{align} 
 \frac{\partial^2 \phi}{\partial x^2} \vert_0 
 & = \frac{1}{\Delta x^2}[(\phi_1-\phi_0)-2(\phi_0-\phi_b)] \\\\
-& = \frac{1}{\Delta x^2}(-3\phi_0+\phi_1+\phi_b)
+& = \frac{1}{\Delta x^2}(-3\phi_0+\phi_1+2\phi_b)
 \end{align}
 $$
 

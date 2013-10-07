@@ -24,16 +24,19 @@ class pressure
     {
         //0
         if (bc.type == bctype::neumann)
-            v->push_back(triplet(ix0, ix0, +2.0 * coeff));
+            v->push_back(triplet(ix0, ix0, -2.0 * coeff));
         else
             v->push_back(triplet(ix0, ix0, -4.0 * coeff));
         v->push_back(triplet(ix0, ix1, +1.0 * coeff));
         v->push_back(triplet(ix0, ix2, +1.0 * coeff));
 
         //1
-        v->push_back(triplet(ix1, ix0, +1.0 * coeff));
-        if (bc.type != bctype::neumann) v->push_back(triplet(ix1, ix1, +2.0 * coeff));
-        v->push_back(triplet(ix1, ix3, -1.0 * coeff));
+        if (bc.type == bctype::neumann)
+            v->push_back(triplet(ix1, ix0, +1.0 * coeff));
+        else
+            v->push_back(triplet(ix1, ix0, -1.0 * coeff));
+        v->push_back(triplet(ix1, ix1, -2.0 * coeff));
+        v->push_back(triplet(ix1, ix3, +1.0 * coeff));
     }
 
     static void add_pressure_row(size_t n, size_t *row_idxs, triplet_vector *v, bcond startbc, bcond endbc, double coeff)
