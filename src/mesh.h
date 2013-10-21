@@ -31,7 +31,7 @@ struct mesh_row
     size_t ii, jj, kk;
     size_t n;
     size_t start[3], end[3];
-    char start_bc, end_bc;
+    char start_code, end_code;
 };
 
 class mesh
@@ -96,7 +96,7 @@ private:
                         row.start[ii] = i;
                         row.start[jj] = j;
                         row.start[kk] = k;
-                        row.start_bc = codes[idx(i - 1, j, k, ii, jj, kk)];
+                        row.start_code = codes[idx(i - 1, j, k, ii, jj, kk)];
                     }
                     else
                     {
@@ -106,7 +106,7 @@ private:
                         row.end[jj] = j;
                         row.end[kk] = k;
                         row.n = row.end[ii] - row.start[ii] + 1;
-                        row.end_bc = codes[x];
+                        row.end_code = codes[x];
                         v.push_back(row);
                     }
                 }

@@ -65,9 +65,9 @@ public:
                 for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
                 {
                     double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
-                    bcond *start_bc = d->boundaries[row->start_bc].velbc + icmpnt;
-                    bcond *end_bc = d->boundaries[row->end_bc].velbc + icmpnt;
-                    advect(row->n, cmpnt, u, d->dt, d->delta, *start_bc, *end_bc);
+                    bcond *start_code = d->boundaries[row->start_code].velbc + icmpnt;
+                    bcond *end_code = d->boundaries[row->end_code].velbc + icmpnt;
+                    advect(row->n, cmpnt, u, d->dt, d->delta, *start_code, *end_code);
                     d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                     delete[] cmpnt;
                 }

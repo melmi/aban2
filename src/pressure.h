@@ -54,7 +54,6 @@ class pressure
     }
 
 public:
-
     typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> sparse_matrix;
 
     sparse_matrix *make_pressure_matrix(domain *d)
@@ -67,9 +66,9 @@ public:
             {
                 mesh_row *row = d->rows[idir] + irow;
                 size_t *row_idxs = d->get_row_idxs(row);
-                bcond start_bc = d->boundaries[row->start_bc].pbc;
-                bcond end_bc = d->boundaries[row->end_bc].pbc;
-                add_pressure_row(row->n, row_idxs, &v, start_bc, end_bc, coeff);
+                bcond start_code = d->boundaries[row->start_code].pbc;
+                bcond end_code = d->boundaries[row->end_code].pbc;
+                add_pressure_row(row->n, row_idxs, &v, start_code, end_code, coeff);
                 delete[] row_idxs;
             }
 

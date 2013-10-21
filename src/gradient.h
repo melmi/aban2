@@ -44,8 +44,8 @@ public:
             {
                 mesh_row *row = d->rows[dir] + irow;
                 double *vals = d->extract_scalars(row, phi);
-                bcond start_bc = d->boundaries[row->start_bc].*bc;
-                bcond end_bc = d->boundaries[row->end_bc].*bc;
+                bcond start_bc = d->boundaries[row->start_code].*bc;
+                bcond end_bc = d->boundaries[row->end_code].*bc;
                 double *g = get_1d_row(row->n, vals, d->delta, start_bc, end_bc);
                 d->insert_scalars(row, grad[dir], g);
                 delete[] g;
@@ -62,9 +62,9 @@ public:
                 for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
                 {
                     double *cmpnt = d->extract_scalars(row, phi[icmpnt]);
-                    bcond *start_bc = d->boundaries[row->start_bc].*bc + icmpnt;
-                    bcond *end_bc = d->boundaries[row->end_bc].*bc + icmpnt;
-                    double *g = get_1d_row(row->n, cmpnt, d->delta, *start_bc, *end_bc);
+                    bcond *start_code = d->boundaries[row->start_code].*bc + icmpnt;
+                    bcond *end_code = d->boundaries[row->end_code].*bc + icmpnt;
+                    double *g = get_1d_row(row->n, cmpnt, d->delta, *start_code, *end_code);
                     d->insert_scalars(row, grad[icmpnt][dir], g);
                     delete[] g;
                     delete[] cmpnt;
@@ -79,10 +79,10 @@ public:
             {
                 mesh_row *row = d->rows[dir] + irow;
                 double *vals = d->extract_scalars(row, phi[dir]);
-                bcond *start_bc = d->boundaries[row->start_bc].*bc + dir;
-                bcond *end_bc = d->boundaries[row->end_bc].*bc + dir;
+                bcond *start_code = d->boundaries[row->start_code].*bc + dir;
+                bcond *end_code = d->boundaries[row->end_code].*bc + dir;
                 double *g = d->extract_scalars(row, divergance);
-                add_1d_row(row->n, vals, g, d->delta, *start_bc, *end_bc);
+                add_1d_row(row->n, vals, g, d->delta, *start_code, *end_code);
                 d->insert_scalars(row, divergance, g);
                 delete[] vals;
             }
