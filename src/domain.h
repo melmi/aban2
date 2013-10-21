@@ -12,6 +12,7 @@
 #include <jsoncpp/json/json.h>
 #include <list>
 #include <fstream>
+#include <eigen3/Eigen/SparseCore>
 
 namespace aban2
 {

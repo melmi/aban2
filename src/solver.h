@@ -8,9 +8,14 @@
 #ifndef _SOLVER_H_
 #define _SOLVER_H_
 
-#include "domain.h"
 #include <jsoncpp/json/json.h>
 
+#include "domain.h"
+#include "advection.h"
+#include "diffusion.h"
+#include "pressure.h"
+#include "projection.h"
+ 
 namespace aban2
 {
 

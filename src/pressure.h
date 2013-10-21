@@ -54,6 +54,7 @@ class pressure
     }
 
 public:
+
     typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> sparse_matrix;
 
     sparse_matrix *make_pressure_matrix(domain *d)
