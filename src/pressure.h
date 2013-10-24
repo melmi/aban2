@@ -26,7 +26,7 @@ class pressure
         if (bc.type == bctype::neumann)
             v->push_back(triplet(ix0, ix0, -2.0 * coeff));
         else
-            v->push_back(triplet(ix0, ix0, -4.0 * coeff));
+            v->push_back(triplet(ix0, ix0, -8.0 * coeff));
         v->push_back(triplet(ix0, ix1, +1.0 * coeff));
         v->push_back(triplet(ix0, ix2, +1.0 * coeff));
 
@@ -56,7 +56,7 @@ class pressure
 public:
     typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> sparse_matrix;
 
-    sparse_matrix *make_pressure_matrix(domain *d)
+    static sparse_matrix *make_pressure_matrix(domain *d)
     {
         double coeff = 1.0 / (4.0 * d->delta * d->delta);
         triplet_vector v(d->n * 5);
@@ -66,14 +66,15 @@ public:
             {
                 mesh_row *row = d->rows[idir] + irow;
                 size_t *row_idxs = d->get_row_idxs(row);
-                bcond start_code = d->boundaries[row->start_code].pbc;
-                bcond end_code = d->boundaries[row->end_code].pbc;
-                add_pressure_row(row->n, row_idxs, &v, start_code, end_code, coeff);
+                bcond start_bc = d->boundaries[row->start_code].pbc;
+                bcond end_bc = d->boundaries[row->end_code].pbc;
+                add_pressure_row(row->n, row_idxs, &v, start_bc, end_bc, coeff);
                 delete[] row_idxs;
             }
 
         sparse_matrix *m = new sparse_matrix(d->n, d->n);
         m->setFromTriplets(v.begin(), v.end());
+
         return m;
     }
 };

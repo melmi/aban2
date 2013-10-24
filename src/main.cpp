@@ -1,5 +1,4 @@
 #include <iostream>
-#include <sstream>
 #include <jsoncpp/json/json.h>
 #include "mesh.h"
 #include "domain.h"
@@ -8,21 +7,19 @@
 #include "pressure.h"
 #include "projection.h"
 #include "tests.h"
+#include "solver.h"
 
 using namespace std;
 using namespace aban2;
 
-string get_fname(string path, size_t step)
-{
-    stringstream s;
-    s << path << step << ".vtk";
-    return s.str();
-}
-
 int main(int argc, char const *argv[])
 {
-    // cout << "Reading mesh" << endl;
-    // domain *d = domain::create_from_file("mesh/cavity100x100.json");
+    cout << "Reading mesh" << endl;
+    domain *d = domain::create_from_file("mesh/cavity4x4.json");
+    cout << "mesh has " << d->n << " inner nodes" << endl;
+    // print_cell_nos(d);
+    // print_rows(d);
+    // print_cell_nos(d);
 
     // cout << "Initializing domain" << endl;
     // // diff_test1(d);
@@ -42,5 +39,10 @@ int main(int argc, char const *argv[])
     // //     d->write_vtk(get_fname( "out/out", it + 1));
     // // }
 
-    // return 0;
+    solver s(d, "out/out");
+    s.step();
+
+
+    // print_rows(d);
+    return 0;
 }

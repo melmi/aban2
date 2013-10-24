@@ -182,7 +182,7 @@ public:
                             {
                                 size_t x = idx(i, j, k);
                                 double val = 0;
-                                if (exists(i, j, k)) val = (*v.data.scalar)[idxs[x]];
+                                if (exists(i, j, k)) val = (*v.data.scalar)[cellnos[x]];
                                 file <<  val << std::endl;
                             }
                     break;
@@ -195,7 +195,7 @@ public:
                                 size_t x = idx(i, j, k);
                                 vector val;
                                 if (exists(i, j, k))
-                                    val = vector::from_data(*v.data.vec, idxs[x]);
+                                    val = vector::from_data(*v.data.vec, cellnos[x]);
                                 file <<  val.x << " " << val.y << " " << val.z << std::endl;
                             }
                     break;
@@ -206,59 +206,41 @@ public:
     double *extract_scalars(mesh_row *row, double *var)
     {
         double *result = new double[row->n];
-        size_t s = row->start[row->ii], e = row->end[row->ii];
-        for (size_t i = s; i <= e; ++i)
-        {
-            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            result[i - s] = var[ix];
-        }
+        for (size_t i = 0; i < row->n; ++i)
+            result[i] = var[cellno(row, i)];
         return result;
     }
 
     void insert_scalars(mesh_row *row, double *var, double *row_vals)
     {
-        size_t s = row->start[row->ii], e = row->end[row->ii];
-        for (size_t i = s; i <= e; ++i)
-        {
-            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            var[ix] = row_vals[i - s];
-        }
+        for (size_t i = 0; i < row->n; ++i)
+            var[cellno(row, i)] = row_vals[i];
     }
 
     vector *extract_vectors(mesh_row *row, double **var)
     {
         vector *result = new vector[row->n];
-        size_t s = row->start[row->ii], e = row->end[row->ii];
-        for (size_t i = s; i <= e; ++i)
-        {
-            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            result[i - s] = vector::from_data(var, ix);
-        } return result;
+        for (size_t i = 0; i < row->n; ++i)
+            result[i] = vector::from_data(var, cellno(row, i));
+        return result;
     }
 
     void insert_vectors(mesh_row *row, double **var, vector *row_vals)
     {
-        size_t s = row->start[row->ii], e = row->end[row->ii];
-        for (size_t i = s; i <= e; ++i)
+        for (size_t i = 0; i < row->n; ++i)
         {
-            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            var[0][ix] = row_vals[i - row->start[row->ii]].x;
-            var[1][ix] = row_vals[i - row->start[row->ii]].y;
-            var[2][ix] = row_vals[i - row->start[row->ii]].z;
+            size_t ix = cellno(row, i);
+            var[0][ix] = row_vals[i].x;
+            var[1][ix] = row_vals[i].y;
+            var[2][ix] = row_vals[i].z;
         }
     }
 
     size_t *get_row_idxs(mesh_row *row)
     {
         size_t *row_idxs = new size_t[row->n];
-        size_t s = row->start[row->ii], e = row->end[row->ii];
-
-        for (size_t i = s; i <= e; ++i)
-        {
-            size_t ix = idxs[idx(i, row->start[row->jj], row->start[row->kk], row->ii, row->jj, row->kk)];
-            row_idxs[i - s] = ix;
-        }
-
+        for (size_t i = 0; i < row->n; ++i)
+            row_idxs[i] = cellno(row, i);
         return row_idxs;
     }
 

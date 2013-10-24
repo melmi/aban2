@@ -27,8 +27,7 @@ namespace aban2
 
 struct mesh_row
 {
-    // ii is the principal direction of the row. jj and kk are its other directions.
-    size_t ii, jj, kk;
+    size_t dir;
     size_t n;
     size_t start[3], end[3];
     char start_code, end_code;
@@ -40,7 +39,7 @@ public:
     size_t n, ndir[3];
     double delta;
     char *codes;
-    size_t *idxs;
+    size_t *cellnos;
     size_t nrows[3];
     static const char INSIDE = ' ';
     mesh_row *rows[3];
@@ -57,6 +56,14 @@ public:
         ijk[jj] = j;
         ijk[kk] = k;
         return idx(ijk[0], ijk[1], ijk[2]);
+    }
+
+    inline size_t cellno(mesh_row *r, size_t i)
+    {
+        r->start[r->dir] += i;
+        size_t result = cellnos[idx(r->start[0], r->start[1], r->start[2])];
+        r->start[r->dir] -= i;
+        return result;
     }
 
     inline void get_dirs(size_t dir, size_t &ii, size_t &jj, size_t &kk)
@@ -90,9 +97,7 @@ private:
                     {
                         if (codes[x] != INSIDE) continue;
                         inside = true;
-                        row.ii = ii;
-                        row.jj = jj;
-                        row.kk = kk;
+                        row.dir = dir;
                         row.start[ii] = i;
                         row.start[jj] = j;
                         row.start[kk] = k;
@@ -117,17 +122,17 @@ private:
             rows[dir][i] = v[i];
     }
 
-    void set_idxs()
+    void set_cell_nos()
     {
         size_t ii = 0;
-        idxs = new size_t[ndir[0] * ndir[1] * ndir[2]];
+        cellnos = new size_t[ndir[0] * ndir[1] * ndir[2]];
         for (int i = 0; i < ndir[0]; ++i)
             for (int j = 0; j < ndir[1]; ++j)
                 for (int k = 0; k < ndir[2]; ++k)
                 {
                     size_t x = idx(i, j, k);
                     if (codes[x] == INSIDE)
-                        idxs[x] = ii++;
+                        cellnos[x] = ii++;
                 }
         n = ii;
     }
@@ -139,7 +144,7 @@ private:
         for (int dir = 0; dir < NDIRS; ++dir)
             generate_rows(dir);
 
-        set_idxs();
+        set_cell_nos();
     }
 
 public:

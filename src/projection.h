@@ -8,11 +8,14 @@
 #ifndef _PROJECTION_H_
 #define _PROJECTION_H_
 
+#include <iostream>
 #include <algorithm>
 #include <eigen3/Eigen/IterativeLinearSolvers>
 
 #include "domain.h"
 #include "pressure.h"
+
+using namespace std;
 
 namespace aban2
 {
@@ -25,13 +28,13 @@ class projection
         gradient::divergance(d, d->ustar, result, &flow_boundary::velbc);
         double rho_dt = d->rho / d->dt;
         for (int i = 0; i < d->n; ++i) result[i] *= rho_dt;
-        apply_dirichlet_p_bc_on_laplac_p_rhs(d, result);
         return result;
     }
 
-    static void apply_dirichlet_p_bc_on_laplac_p_rhs(domain *d, double *rhs)
+    static void apply_dirichlet_p_bc(domain *d, double *rhs)
     {
         bcond bc;
+        double coeff = 1. / d->delta / d->delta / 4.;
 
         for (size_t dir = 0; dir < NDIRS; ++dir)
             for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
@@ -40,37 +43,44 @@ class projection
 
                 bc = d->boundaries[row->start_code].pbc;
                 if (bc.type == bctype::dirichlet)
-                    rhs[row->start[row->ii]] += -bc.val / d->delta / d->delta;
-
+                {
+                    rhs[d->cellno(row, 0)] += -6.*bc.val * coeff;
+                    rhs[d->cellno(row, 1)] += -2.*bc.val * coeff;
+                }
                 bc = d->boundaries[row->end_code].pbc;
                 if (bc.type == bctype::dirichlet)
-                    rhs[row->start[row->ii]] += -bc.val / d->delta / d->delta;
+                {
+                    rhs[d->cellno(row, row->n - 1)] += -6.*bc.val * coeff;
+                    rhs[d->cellno(row, row->n - 2)] += -2.*bc.val * coeff;
+                }
             }
     }
 
     static double *get_pressure_rhs(domain *d)
     {
         double *rhs = get_div_ustar(d);
-        apply_dirichlet_p_bc_on_laplac_p_rhs(d, rhs);
+        apply_dirichlet_p_bc(d, rhs);
         return rhs;
     }
 
 public:
-    void solve_p(domain *d, pressure::sparse_matrix *m)
+    typedef Eigen::BiCGSTAB<pressure::sparse_matrix> psolver;
+
+    static void solve_p(domain *d, psolver *solver)
     {
         double *rhs = get_pressure_rhs(d);
+
         Eigen::VectorXd b(d->n);
         for (int i = 0; i < d->n; ++i) b[i] = rhs[i];
         delete[] rhs;
 
-        Eigen::BiCGSTAB<pressure::sparse_matrix> solver(*m);
         Eigen::VectorXd x(d->n);
-        x = solver.solve(b);
+        x = solver->solve(b);
 
         for (int i = 0; i < d->n; ++i) d->p[i] = x[i];
     }
 
-    void update_u(domain *d)
+    static void update_u(domain *d)
     {
         double **grad_p = (double **)d->create_var(2);
         gradient::of_scalar(d, d->p, grad_p, &flow_boundary::pbc);
