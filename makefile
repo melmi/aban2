@@ -1,2 +1,37 @@
-bin/aban2: src/mesh.h src/domain.h src/main.cpp src/vector.h src/advection.h src/solver.h src/diffusion.h src/pressure.h src/tests.h src/gradient.h src/projection.h src/bodyforce.h
-	g++ -std=c++11 src/main.cpp -ljsoncpp -o bin/aban2
+SRCDIR = src
+OBJDIR = bin
+DEPDIR = bin
+BINDIR = bin
+
+CXX      = g++
+CXXFLAGS = -Wall -O3 -std=c++11
+LDFLAGS  = -ljsoncpp
+
+TARGET = $(BINDIR)/aban2
+SRCS   = $(wildcard $(SRCDIR)/*.cpp)
+OBJS   = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o      ,$(SRCS))
+DEPS   = $(patsubst $(SRCDIR)/%.cpp,$(DEPDIR)/%.depends,$(SRCS))
+
+.PHONY: all clean run
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	mkdir -p $(BINDIR)
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $(TARGET)
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp 
+	mkdir -p $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(DEPDIR)/%.depends: $(SRCDIR)/%.cpp 
+	mkdir -p $(DEPDIR)
+	$(CXX) -M $(CXXFLAGS) $< > $@
+
+clean:
+	rm -f $(OBJS) $(DEPS) $(TARGET)
+
+run:
+	$(TARGET)
+
+-include $(DEPS)
