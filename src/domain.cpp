@@ -214,7 +214,7 @@ void domain::delete_var(size_t dim, void *v)
     if (dim > 1)
         for (int i = 0; i < 3; ++i)
             delete_var(dim - 1, ((double **)v)[i]);
-    delete[] v;
+    delete[] (double *)v;
 }
 
 void domain::create_vars()
