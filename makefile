@@ -9,7 +9,7 @@ LDFLAGS  = -ljsoncpp
 
 TARGET = $(BINDIR)/aban2
 SRCS   = $(wildcard $(SRCDIR)/*.cpp)
-OBJS   = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o      ,$(SRCS))
+OBJS   = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 DEPS   = $(patsubst $(SRCDIR)/%.cpp,$(DEPDIR)/%.depends,$(SRCS))
 
 .PHONY: all clean run
@@ -17,19 +17,19 @@ DEPS   = $(patsubst $(SRCDIR)/%.cpp,$(DEPDIR)/%.depends,$(SRCS))
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	mkdir -p $(BINDIR)
+	@mkdir -p $(BINDIR)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp 
-	mkdir -p $(OBJDIR)
+	@mkdir -p $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(DEPDIR)/%.depends: $(SRCDIR)/%.cpp 
-	mkdir -p $(DEPDIR)
-	$(CXX) -M $(CXXFLAGS) $< > $@
+	@mkdir -p $(DEPDIR)
+	$(CXX) -MM $(CXXFLAGS) $< -MT $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$<) -MF $@
 
 clean:
-	rm -f $(OBJS) $(DEPS) $(TARGET)
+	@rm -f $(OBJS) $(DEPS) $(TARGET)
 
 run:
 	$(TARGET)

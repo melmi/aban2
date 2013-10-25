@@ -8,8 +8,11 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
+#include <iostream>
+
 namespace aban2
 {
+
 struct vector
 {
     union
@@ -21,19 +24,14 @@ struct vector
         };
     };
 
-    vector(): vector(0, 0, 0)
-    {
-    }
+    vector();
 
-    vector(double _x, double _y, double _z): x(_x), y(_y), z(_z)
-    {
-    }
+    vector(double _x, double _y, double _z);
     
-    static vector from_data(double **data, size_t i)
-    {
-        return vector(data[0][i], data[1][i], data[2][i]);
-    }
+    static vector from_data(double **data, size_t i);
+
 };
+
 }
 
 #endif

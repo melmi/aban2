@@ -14,14 +14,11 @@
 
 namespace aban2
 {
+	
 class bodyforce
 {
 public:
-    static void add_g(domain *d)
-    {
-        for (int i = 0; i < d->n; ++i)
-            d->ustar[1][i] += -7 * d->dt;
-    }
+    static void add_g(domain *d);
 };
 
 }

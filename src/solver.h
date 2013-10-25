@@ -27,40 +27,13 @@ public:
     domain *d;
     pressure::sparse_matrix *pmatrix;
     projection::psolver *psolver;
-    string out_path;
+    std::string out_path;
 
-    void write_step(size_t step)
-    {
-        stringstream s;
-        s << out_path << step << ".vtk";
-        d->write_vtk(s.str());
-    }
+    void write_step(size_t step);
 
-    solver(domain *_d, string _out_path): d(_d), out_path(_out_path)
-    {
-        pmatrix = pressure::make_pressure_matrix(d);
-        psolver = new projection::psolver(*pmatrix);
-    }
+    solver(domain *_d, std::string _out_path);
 
-    void step()
-    {
-        write_step(0);
-
-        for (int i = 0; i < NDIRS; ++i)
-            std::copy_n(d->u[i], d->n, d->ustar[i]);
-
-        write_step(1);
-        advection::advect_ustar(d);
-        write_step(2);
-        diffusion::diffuse_ustar(d);
-        write_step(3);
-        bodyforce::add_g(d);
-        write_step(4);
-        projection::solve_p(d, psolver);
-        write_step(5);
-        projection::update_u(d);
-        write_step(6);
-    }
+    void step();
 };
 
 }
