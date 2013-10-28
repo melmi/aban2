@@ -21,7 +21,7 @@ class projection
 {
     static double *get_div_ustar(domain *d);
 
-    static void apply_dirichlet_p_bc(domain *d, double *rhs);
+    static void apply_p_bc(domain *d, double *rhs);
 
     static double *get_pressure_rhs(domain *d);
 

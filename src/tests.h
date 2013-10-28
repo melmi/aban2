@@ -32,14 +32,16 @@ string rowtostr(mesh_row *r)
 
 void print_cell_nos(domain *d)
 {
-    for (int i = d->ndir[0]; i > 0; --i)
+    for (int i = d->ndir[0]-1; i > 0; --i)
     {
-        for (int j = 0; j < d->ndir[1]; ++j)
+        for (int j = 1; j < d->ndir[1]-1; ++j)
         {
             size_t x = d->idx(i, j, 0);
             cout.width(4);
             if (d->codes[x] == mesh::INSIDE)
                 cout << d->cellnos[x];
+            // else
+            //     cout << d->codes[x];
         }
 
         cout << endl;
@@ -70,6 +72,7 @@ void print_rows(domain *d)
 
 void adv_test1(domain *d)
 {
+    double x0 = 51, y0 = 51;
     for (int i = 0; i < d->ndir[0]; ++i)
         for (int j = 0; j < d->ndir[1]; ++j)
             for (int k = 0; k < d->ndir[2]; ++k)
@@ -81,7 +84,7 @@ void adv_test1(domain *d)
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
                     double z = k * d->delta + d->delta / 2.0;
-                    double phi = 3.*x + 4.*y;
+                    double phi = exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
                     d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
                 }
 }

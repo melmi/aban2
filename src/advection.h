@@ -8,17 +8,19 @@
 #ifndef _ADVECTION_H_
 #define _ADVECTION_H_
 
-#include "domain.h"
-#include "gradient.h"
-#include <algorithm>
+#include "bcondition.h"
 
 namespace aban2
 {
 
+class domain;
+class mesh_row;
+
 class advection
 {
 public:
-    static void advect(size_t n, double *phi, double *u, double dt, double dx, bcond startbc, bcond endbc);
+    static void advect(domain*d, mesh_row* row, double *phi, double *u, bcondition::func bcfunc, size_t cmpnt);
+
     static void advect_ustar(domain *d);
 };
 

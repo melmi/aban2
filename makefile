@@ -2,6 +2,7 @@ SRCDIR = src
 OBJDIR = bin
 DEPDIR = bin
 BINDIR = bin
+OUTDIR = out
 
 CXX      = g++
 CXXFLAGS = -O3 -std=c++11
@@ -12,7 +13,7 @@ SRCS   = $(wildcard $(SRCDIR)/*.cpp)
 OBJS   = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 DEPS   = $(patsubst $(SRCDIR)/%.cpp,$(DEPDIR)/%.depends,$(SRCS))
 
-.PHONY: all clean run
+.PHONY: all clean run cleanout
 
 all: $(TARGET)
 	@echo Done.
@@ -20,6 +21,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	@echo Linking $@
 	@mkdir -p $(BINDIR)
+	@mkdir -p $(OUTDIR)
 	@$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp 
@@ -35,7 +37,10 @@ $(DEPDIR)/%.depends: $(SRCDIR)/%.cpp
 clean:
 	@rm -f $(OBJS) $(DEPS) $(TARGET)
 
-run:
+cleanout:
+	@rm -f $(OUTDIR)/*
+
+run: all
 	$(TARGET)
 
 -include $(DEPS)

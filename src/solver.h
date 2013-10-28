@@ -16,7 +16,6 @@
 #include "diffusion.h"
 #include "pressure.h"
 #include "projection.h"
-#include "bodyforce.h"
 
 namespace aban2
 {

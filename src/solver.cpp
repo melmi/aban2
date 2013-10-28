@@ -35,12 +35,10 @@ void solver::step()
     write_step(2);
     diffusion::diffuse_ustar(d);
     write_step(3);
-    bodyforce::add_g(d);
-    write_step(4);
     projection::solve_p(d, psolver);
-    write_step(5);
+    write_step(4);
     projection::update_u(d);
-    write_step(6);
+    write_step(5);
 }
 
 }

@@ -27,7 +27,9 @@ struct vector
     vector();
 
     vector(double _x, double _y, double _z);
-    
+
+    double operator*(vector v);
+
     static vector from_data(double **data, size_t i);
 
 };

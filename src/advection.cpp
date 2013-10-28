@@ -7,13 +7,22 @@
 
 #include "advection.h"
 
+#include <algorithm>
+
+#include "domain.h"
+#include "gradient.h"
+
 namespace aban2
 {
-void advection::advect(size_t n, double *phi, double *u, double dt, double dx, bcond startbc, bcond endbc)
+
+void advection::advect(domain *d, mesh_row *row, double *phi, double *u, bcondition::func bcfunc, size_t cmpnt)
 {
     double flux;
 
-    double *grad = gradient::get_1d_row(n, phi, dx, startbc, endbc);
+    double dx = d->delta, dt = d->dt;
+    size_t n = row->n;
+
+    double *grad = gradient::get_1d_row(d, row, phi, bcfunc, cmpnt);
     double *mass = new double[n];
 
     for (size_t i = 0; i < n; ++i) mass[i] = phi[i] * dx;
@@ -30,15 +39,11 @@ void advection::advect(size_t n, double *phi, double *u, double dt, double dx, b
         mass[ii] += flux;
     }
 
-    if (startbc.type == bctype::dirichlet)
-        mass[0] += startbc.val * u[0] * dt;
-    else
-        mass[0] += phi[0] * u[0] * dt;
+    auto startbc = d->boundaries[row->start_code];
+    auto endbc = d->boundaries[row->end_code];
 
-    if (endbc.type == bctype::dirichlet)
-        mass[n - 1] -= endbc.val * u[0] * dt;
-    else
-        mass[n - 1] -= phi[n - 1] * u[n - 1] * dt;
+    mass[0] += (startbc->*bcfunc)(d, row, bcside::start, cmpnt) * u[0] * dt;
+    mass[n - 1] -= (startbc->*bcfunc)(d, row, bcside::end, cmpnt) * u[n - 1] * dt;
 
     for (size_t i = 0; i < n; ++i) phi[i] = mass[i] / dx;
 
@@ -56,14 +61,12 @@ void advection::advect_ustar(domain *d)
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
             {
                 double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
-                bcond *start_code = d->boundaries[row->start_code].velbc + icmpnt;
-                bcond *end_code = d->boundaries[row->end_code].velbc + icmpnt;
-                advect(row->n, cmpnt, u, d->dt, d->delta, *start_code, *end_code);
+                advect(d, row, cmpnt, u, &bcondition::u, dir);
                 d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                 delete[] cmpnt;
             }
             delete[] u;
         }
 }
-}
 
+}

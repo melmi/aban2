@@ -8,34 +8,16 @@
 #ifndef _DOMAIN_H_
 #define _DOMAIN_H_
 
-#include "mesh.h"
 #include <jsoncpp/json/json.h>
 #include <list>
 #include <fstream>
 #include <eigen3/Eigen/SparseCore>
 
+#include "mesh.h"
+#include "bcondition.h"
+
 namespace aban2
 {
-
-enum class bctype
-{
-    neumann, dirichlet
-};
-
-struct bcond
-{
-    bctype type;
-    double val;
-};
-
-struct flow_boundary
-{
-    bcond velbc[3];
-    bcond pbc;
-
-    void set_vel_bc(vector v);
-    void set_pressure_bc(double val);
-};
 
 enum class vardim
 {
@@ -62,8 +44,9 @@ class domain: public mesh
 public:
     double **u, * *ustar, *p;
     double dt, tend, rho, mu;
+    vector g;
     int step_write;
-    flow_boundary *boundaries;
+    bcondition **boundaries;
     std::list<varinfo> varlist;
 
     static domain *create_from_file(std::string file_name);

@@ -10,30 +10,6 @@
 namespace aban2
 {
 
-void flow_boundary::set_vel_bc(vector v)
-{
-    pbc.type = bctype::neumann;
-    pbc.val = 0;
-
-    for (int i = 0; i < 3; ++i)
-    {
-        velbc[i].type = bctype::dirichlet;
-        velbc[i].val = v.components[i];
-    }
-}
-
-void flow_boundary::set_pressure_bc(double val)
-{
-    pbc.type = bctype::dirichlet;
-    pbc.val = val;
-
-    for (int i = 0; i < 3; ++i)
-    {
-        velbc[i].type = bctype::neumann;
-        velbc[i].val = 0;
-    }
-}
-
 varinfo::varinfo(std::string _name, vardim _dim, bool _show, void *_data):
     name(_name), dim(_dim), show(_show)
 {
@@ -60,23 +36,13 @@ domain::domain(Json::Value *root): mesh(root)
     tend = root->get("tend", 1).asDouble();
     rho = root->get("rho", 1000).asDouble();
     mu = root->get("mu", 1e-3).asDouble();
+    Json::Value gnode = (*root)["g"];
+    g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
     step_write = root->get("step_write", 1).asInt();
 
-    boundaries = new flow_boundary[256];
+    boundaries = new bcondition*[256];
     Json::Value boundaries_val = (*root)["boundaries"];
-    auto bnames = boundaries_val.getMemberNames();
-    for (auto & x : bnames)
-    {
-        Json::Value bc = boundaries_val[x];
-        auto boundary = boundaries + x[0];
-        if (bc["type"].asString() == "flux")
-        {
-            Json::Value bcval = bc["value"];
-            boundary->set_vel_bc(vector(bcval[0].asDouble(), bcval[1].asDouble(), bcval[2].asDouble()));
-        }
-        if (bc["type"].asString() == "pressure")
-            boundary->set_pressure_bc(bc.get("value", "0").asDouble());
-    }
+    bcondition::create_bcs(&boundaries_val, boundaries);
 
     register_vars();
     create_vars();

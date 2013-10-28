@@ -9,6 +9,7 @@
 
 namespace aban2
 {
+
 void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c)
 {
     /* unsigned integer of same size as pointer */
@@ -40,9 +41,11 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(size_t n, double *phi, double d, double dt, double dx, bcond startbc, bcond endbc)
+void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::type bctype, bcondition::func bcfunc, size_t cmpnt)
 {
-    double coeff = d * dt / dx / dx;
+    double dx = d->delta, dt = d->dt;
+    size_t n = row->n;
+    double coeff = D * dt / dx / dx;
 
     double *aa = new double[n], *bb = new double[n], *cc = new double[n];
 
@@ -52,20 +55,23 @@ void diffusion::diffuse(size_t n, double *phi, double d, double dt, double dx, b
         bb[i] = 1.0 + 2.0 * coeff;
     }
 
-    if (startbc.type == bctype::dirichlet)
+    auto startbc = d->boundaries[row->start_code];
+    auto endbc = d->boundaries[row->end_code];
+
+    if (startbc->*bctype == aban2::bctype::dirichlet)
     {
         bb[0] = 1.0 + 3.0 * coeff;
-        phi[0] += 2.0 * coeff *  startbc.val;
+        phi[0] += 2.0 * coeff *  (startbc->*bcfunc)(d, row, bcside::start, cmpnt);
     }
     else
     {
         bb[0] = 1.0 + coeff;
     }
 
-    if (endbc.type == bctype::dirichlet)
+    if (endbc->*bctype == aban2::bctype::dirichlet)
     {
         bb[n - 1] = 1.0 + 3.0 * coeff;
-        phi[n - 1] +=  2.0 * coeff * endbc.val;
+        phi[n - 1] +=  2.0 * coeff * (endbc->*bcfunc)(d, row, bcside::end, cmpnt);
     }
     else
     {
@@ -87,9 +93,7 @@ void diffusion::diffuse_ustar(domain *d)
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
             {
                 double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
-                bcond *start_code = d->boundaries[row->start_code].velbc + icmpnt;
-                bcond *end_code = d->boundaries[row->end_code].velbc + icmpnt;
-                diffuse(row->n, cmpnt, d->mu, d->dt, d->delta, *start_code, *end_code);
+                diffuse(d, row, cmpnt, d->mu, &bcondition::utype, &bcondition::u, icmpnt);
                 d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                 delete[] cmpnt;
             }

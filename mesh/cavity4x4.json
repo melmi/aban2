@@ -5,7 +5,8 @@
   "dt": 0.1,
   "delta": 1,
   "rho": 1000,
-  "mu": 0.1,
+  "mu": 5.1,
+  "g":[0,-7,0],
   "codes": [
     [
       "222222",
@@ -18,7 +19,7 @@
   ],
   "boundaries": {
     "1": {
-      "type": "flux",
+      "type": "velocity",
       "value": [
         0,
         0,
@@ -27,7 +28,7 @@
     },
     "2": {
       "type": "pressure",
-      "value": 1000
+      "value": 0
     }
   }
 }
