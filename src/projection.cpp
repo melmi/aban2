@@ -21,7 +21,7 @@ double *projection::get_div_ustar(domain *d)
     return result;
 }
 
-void apply_single_p_bc(domain *d, mesh_row *row, double *rhs, bcside side, double coeff)
+void projection::apply_single_p_bc(domain *d, mesh_row *row, double *rhs, bcside side, double coeff)
 {
     size_t idx0, idx1;
     bcondition *bc;
@@ -100,7 +100,7 @@ void projection::update_u(domain *d)
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] - grad_p[dir][i] * d->dt;
+            d->u[dir][i] = d->ustar[dir][i] + (- grad_p[dir][i] / d->rho + d->g.components[dir]) * d->dt;
 
     d->delete_var(2, grad_p);
 }

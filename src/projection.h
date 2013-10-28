@@ -21,6 +21,8 @@ class projection
 {
     static double *get_div_ustar(domain *d);
 
+    static void apply_single_p_bc(domain *d, mesh_row *row, double *rhs, bcside side, double coeff);
+
     static void apply_p_bc(domain *d, double *rhs);
 
     static double *get_pressure_rhs(domain *d);
