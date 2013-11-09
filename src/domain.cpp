@@ -32,6 +32,7 @@ domain *domain::create_from_file(std::string file_name)
 
 domain::domain(Json::Value *root): mesh(root)
 {
+    t = 0;
     dt = root->get("dt", 1).asDouble();
     tend = root->get("tend", 1).asDouble();
     rho = root->get("rho", 1000).asDouble();

@@ -44,6 +44,7 @@ class domain: public mesh
 public:
     double **u, * *ustar, *p;
     double dt, tend, rho, mu;
+    double t;
     vector g;
     int step_write;
     bcondition **boundaries;

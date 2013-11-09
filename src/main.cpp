@@ -16,15 +16,10 @@ using namespace aban2;
 int main(int argc, char const *argv[])
 {
     cout << "Reading mesh" << endl;
-    domain *d = domain::create_from_file("mesh/cavity4x4.json");
-    cout << "mesh has " << d->n << " inner nodes" << endl;
-    cout << "mu: " << d->mu << endl;
-
-    print_rows(d);
-    print_cell_nos(d);
-
+    domain *d = domain::create_from_file("mesh/cavity10x10.json");
     solver s(d, "out/out");
     s.step();
+    s.run(1000);
 
     return 0;
 }

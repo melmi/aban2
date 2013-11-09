@@ -10,7 +10,7 @@
 
 #include <algorithm>
 #include <sstream>
- 
+
 #include "domain.h"
 #include "advection.h"
 #include "diffusion.h"
@@ -33,6 +33,9 @@ public:
     solver(domain *_d, std::string _out_path);
 
     void step();
+
+    void run(double tend);
+
 };
 
 }
