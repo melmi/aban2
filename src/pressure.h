@@ -9,7 +9,7 @@
 #define _PRESSURE_H_
 
 #include <vector>
-#include <eigen3/Eigen/SparseCore>
+#include <Eigen32/SparseCore>
 
 #include "domain.h"
 #include "bcondition.h"
@@ -33,6 +33,7 @@ class pressure
         double coeff);
 
 public:
+    // typedef Eigen::SparseMatrix<double> sparse_matrix;
     typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> sparse_matrix;
 
     static sparse_matrix *make_pressure_matrix(domain *d);

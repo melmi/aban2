@@ -9,6 +9,8 @@
 
 #include "gradient.h"
 
+#include <iostream>
+
 namespace aban2
 {
 
@@ -79,16 +81,23 @@ double *projection::get_pressure_rhs(domain *d)
     return rhs;
 }
 
-void projection::solve_p(domain *d, psolver *solver)
+void projection::solve_p(domain *d, psolver *solver, pressure::sparse_matrix *A)
 {
     double *rhs = get_pressure_rhs(d);
 
-    Eigen::VectorXd b(d->n);
-    for (int i = 0; i < d->n; ++i) b[i] = rhs[i];
+    Eigen::VectorXd b(d->n), x(d->n);//, x0(d->n);
+    for (int i = 0; i < d->n; ++i)
+    {
+        b[i] = rhs[i];
+        // x0[i] = d->p[i];
+    }
     delete[] rhs;
 
-    Eigen::VectorXd x(d->n);
+    // std::cout << ((*A)*x0 - b).norm() / b.norm() << '\t';
     x = solver->solve(b);
+    // std::cout << ((*A)*x - b).norm() / b.norm() << '\t';
+    // x = solver->solveWithGuess(b, x0);
+    // std::cout << ((*A)*x - b).norm() / b.norm() << std::endl;
 
     for (int i = 0; i < d->n; ++i) d->p[i] = x[i];
 }

@@ -9,7 +9,7 @@
 #define _PROJECTION_H_
 
 #include <algorithm>
-#include <eigen3/Eigen/IterativeLinearSolvers>
+#include <Eigen32/IterativeLinearSolvers>
 
 #include "domain.h"
 #include "pressure.h"
@@ -30,7 +30,7 @@ class projection
 public:
     typedef Eigen::BiCGSTAB<pressure::sparse_matrix> psolver;
 
-    static void solve_p(domain *d, psolver *solver);
+    static void solve_p(domain *d, psolver *solver, pressure::sparse_matrix *A);
 
     static void update_u(domain *d);
 

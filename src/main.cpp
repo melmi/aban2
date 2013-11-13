@@ -19,7 +19,7 @@ int main(int argc, char const *argv[])
     domain *d = domain::create_from_file("mesh/cavity10x10.json");
     solver s(d, "out/out");
     s.step();
-    s.run(1000);
+    s.run(1);
 
     return 0;
 }

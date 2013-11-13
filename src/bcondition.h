@@ -33,11 +33,11 @@ public:
     typedef double(bcondition::*func)(domain *, mesh_row *, bcside, size_t);
     typedef bctype bcondition::*type;
 
-    bctype utype, ptype;
+    bctype voftype, utype, ptype;
 
     virtual double p(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
-
     virtual double u(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
+    virtual double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
 
     static void create_bcs(Json::Value *bcroot, bcondition **boundaries);
 };
@@ -48,8 +48,8 @@ public:
     double value[3];
 
     double p(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-
     double u(domain *d, mesh_row *r, bcside side, size_t cmpnt);
+    double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt);
 
     velocitybc(Json::Value *bcdata);
 };
@@ -60,8 +60,8 @@ public:
     double value;
 
     double p(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-
     double u(domain *d, mesh_row *r, bcside side, size_t cmpnt);
+    double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt);
 
     pressurebc(Json::Value *bcdata);
 };

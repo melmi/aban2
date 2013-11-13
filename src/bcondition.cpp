@@ -13,10 +13,12 @@
 namespace aban2
 {
 
+//////////////////////////  bcondition
+
 void bcondition::create_bcs(Json::Value *bcroot, bcondition **boundaries)
 {
     auto bnames = bcroot->getMemberNames();
-    for (auto & x : bnames)
+    for (auto &x : bnames)
     {
         Json::Value bc = (*bcroot)[x];
         if (bc["type"].asString() == "velocity")
@@ -25,6 +27,8 @@ void bcondition::create_bcs(Json::Value *bcroot, bcondition **boundaries)
             boundaries[x[0]] = new pressurebc(&bc);
     }
 }
+
+//////////////////////////  velocitybc
 
 double velocitybc::p(domain *d, mesh_row *r, bcside side, size_t cmpnt)
 {
@@ -49,8 +53,15 @@ double velocitybc::u(domain *d, mesh_row *r, bcside side, size_t cmpnt)
     return value[cmpnt];
 }
 
+double velocitybc::vof(domain *d, mesh_row *r, bcside side, size_t cmpnt)
+{
+    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
+    return d->vof[cellno];
+}
+
 velocitybc::velocitybc(Json::Value *bcdata)
 {
+    voftype = bctype::neumann;
     utype = bctype::dirichlet;
     ptype = bctype::neumann;
 
@@ -59,6 +70,8 @@ velocitybc::velocitybc(Json::Value *bcdata)
     value[1] = bcval[1].asDouble();
     value[2] = bcval[2].asDouble();
 }
+
+//////////////////////////  pressurebc
 
 double pressurebc::p(domain *d, mesh_row *r, bcside side, size_t cmpnt)
 {
@@ -71,8 +84,15 @@ double pressurebc::u(domain *d, mesh_row *r, bcside side, size_t cmpnt)
     return d->u[cmpnt][cellno];
 }
 
+double pressurebc::vof(domain *d, mesh_row *r, bcside side, size_t cmpnt)
+{
+    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
+    return d->vof[cellno];
+}
+
 pressurebc::pressurebc(Json::Value *bcdata)
 {
+    voftype = bctype::neumann;
     utype = bctype::neumann;
     ptype = bctype::dirichlet;
 

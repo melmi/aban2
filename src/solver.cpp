@@ -8,7 +8,7 @@
 #include "solver.h"
 
 #include <iostream>
-#include <eigen3/Eigen/Eigenvalues>
+#include <Eigen32/Eigenvalues>
 
 namespace aban2
 {
@@ -37,7 +37,7 @@ void solver::step()
 
     advection::advect_ustar(d);
     diffusion::diffuse_ustar(d);
-    projection::solve_p(d, psolver);
+    projection::solve_p(d, psolver, pmatrix);
     projection::update_u(d);
 
     d->t += d->dt;

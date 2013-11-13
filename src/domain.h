@@ -11,7 +11,7 @@
 #include <jsoncpp/json/json.h>
 #include <list>
 #include <fstream>
-#include <eigen3/Eigen/SparseCore>
+//#include <eigen3/Eigen/SparseCore>
 
 #include "mesh.h"
 #include "bcondition.h"
@@ -42,7 +42,7 @@ struct varinfo
 class domain: public mesh
 {
 public:
-    double **u, * *ustar, *p;
+    double **u, * *ustar, *p, *vof, *smooth_vof, **nb;
     double dt, tend, rho, mu;
     double t;
     vector g;
