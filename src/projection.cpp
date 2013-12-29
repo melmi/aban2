@@ -17,9 +17,7 @@ projection::projection(domain *_d): d(_d)
 
     pmatrix = new matrix_t(d->n, d->n);
 
-    raw_coeffs = new triplet_vector();
     make_matrix();
-    delete raw_coeffs;
 
     psolver = new solver_t(*pmatrix);
 }
@@ -30,23 +28,23 @@ projection::~projection()
     delete psolver;
 }
 
-/*
- * functions to make pressure coeffs matrix
- */
-
 void projection::make_matrix()
 {
+    triplet_vector *coeffs = new triplet_vector();
+
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
             mesh_row *row = d->rows[idir] + irow;
-            add_row(row);
+            add_row(row, coeffs);
         }
 
-    pmatrix->setFromTriplets(raw_coeffs->begin(), raw_coeffs->end());
+    pmatrix->setFromTriplets(coeffs->begin(), coeffs->end());
+
+    delete coeffs;
 }
 
-void projection::add_row(mesh_row *row)
+void projection::add_row(mesh_row *row, triplet_vector *coeffs)
 {
     size_t n = row->n;
     size_t *row_idxs = d->get_row_idxs(row);
@@ -56,30 +54,26 @@ void projection::add_row(mesh_row *row)
     for (size_t i = 1; i < n - 1; ++i)
     {
         size_t ix = row_idxs[i];
-        raw_coeffs->push_back(triplet_t(ix, row_idxs[i - 1], +1.0 * h2inv));
-        raw_coeffs->push_back(triplet_t(ix, ix             , -2.0 * h2inv));
-        raw_coeffs->push_back(triplet_t(ix, row_idxs[i + 1], +1.0 * h2inv));
+        coeffs->push_back(triplet_t(ix, row_idxs[i - 1], +1.0 * h2inv));
+        coeffs->push_back(triplet_t(ix, ix             , -2.0 * h2inv));
+        coeffs->push_back(triplet_t(ix, row_idxs[i + 1], +1.0 * h2inv));
     }
 
-    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_type);
-    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_type  );
+    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_type, coeffs);
+    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_type  , coeffs);
 
     delete[] row_idxs;
 }
 
-void projection::apply_row_bc(size_t ix0 , size_t ix1, bctype bct)
+void projection::apply_row_bc(size_t ix0 , size_t ix1, bctype bct, triplet_vector *coeffs)
 {
     if (bct == bctype::neumann)
-        raw_coeffs->push_back(triplet_t(ix0, ix0, -1.0 * h2inv));
+        coeffs->push_back(triplet_t(ix0, ix0, -1.0 * h2inv));
     else
-        raw_coeffs->push_back(triplet_t(ix0, ix0, -3.0 * h2inv));
+        coeffs->push_back(triplet_t(ix0, ix0, -3.0 * h2inv));
 
-    raw_coeffs->push_back(triplet_t(ix0, ix1, +1.0 * h2inv));
+    coeffs->push_back(triplet_t(ix0, ix1, +1.0 * h2inv));
 }
-
-/*
- * functions to make rhs of pressure equation
- */
 
 double *projection::get_rhs()
 {
@@ -134,10 +128,6 @@ void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
     }
 }
 
-/*
- * public functions
- */
-
 void projection::solve_p()
 {
     double *rhs = get_rhs();
@@ -150,9 +140,14 @@ void projection::solve_p()
 
 void projection::update_u()
 {
-    // for (int i = 0; i < d->n; ++i)
-    //     for (int dir = 0; dir < NDIRS; ++dir)
-    //         d->u[dir][i] = d->ustar[dir][i] + (- d->gradp[dir][i] / d->rho + d->g.components[dir]) * d->dt;
+    double **gradp = (double **)d->create_var(2);
+    gradient::of_scalar(d, d->p, gradp, &bcondition::p);
+
+    for (int i = 0; i < d->n; ++i)
+        for (int dir = 0; dir < NDIRS; ++dir)
+            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] / d->rho * d->dt;
+
+    d->delete_var(2, gradp);
 }
 
 }

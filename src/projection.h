@@ -22,7 +22,6 @@ class projection
 {
 public:
     projection(domain *_d);
-
     ~projection();
 
 private:
@@ -33,27 +32,19 @@ private:
 
     domain *d;
     double h2inv;
-    triplet_vector *raw_coeffs;
     matrix_t *pmatrix;
     solver_t *psolver;
 
-    // functions to make pressure coeffs matrix
     void make_matrix();
+    void add_row(mesh_row *row, triplet_vector *coeffs);
+    void apply_row_bc(size_t ix0, size_t ix1, bctype bct, triplet_vector *coeffs);
 
-    void add_row(mesh_row *row);
-
-    void apply_row_bc(size_t ix0, size_t ix1, bctype bct);
-
-    // functions to make rhs of pressure equation
     double *get_rhs();
-
     void apply_rhs_bc(double *rhs);
-
     void apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side);
 
 public:
     void solve_p();
-
     void update_u();
 };
 
