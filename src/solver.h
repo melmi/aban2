@@ -14,7 +14,6 @@
 #include "domain.h"
 #include "advection.h"
 #include "diffusion.h"
-#include "pressure.h"
 #include "projection.h"
 
 namespace aban2
@@ -24,13 +23,13 @@ class solver
 {
 public:
     domain *d;
-    pressure::sparse_matrix *pmatrix;
-    projection::psolver *psolver;
+    projection *projector;
     std::string out_path;
 
     void write_step(size_t step);
 
     solver(domain *_d, std::string _out_path);
+    ~solver();
 
     void step();
 

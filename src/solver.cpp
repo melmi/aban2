@@ -22,12 +22,12 @@ void solver::write_step(size_t step)
 
 solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
-    pmatrix = pressure::make_pressure_matrix(d);
-    // Eigen::MatrixXd mmm(*pmatrix);
-    // std::cout << mmm << std::endl;
-    // auto e = mmm.eigenvalues();
-    // std::cout << "The eigenvalues of the 10x10 matrix of ones are:" << std::endl << e << std::endl;
-    psolver = new projection::psolver(*pmatrix);
+    projector = new projection(d);
+}
+
+solver::~solver()
+{
+    delete projector;
 }
 
 void solver::step()
@@ -37,8 +37,8 @@ void solver::step()
 
     advection::advect_ustar(d);
     diffusion::diffuse_ustar(d);
-    projection::solve_p(d, psolver, pmatrix);
-    projection::update_u(d);
+    projector->solve_p();
+    projector->update_u();
 
     d->t += d->dt;
 }
@@ -51,7 +51,7 @@ void solver::run(double tend)
     for (int it = 0; it < nsteps; ++it)
     {
         std::cout << "running step " << it + 1
-                  << " [ iterations: " << psolver->iterations() << "  error: " << psolver->error() << " ]"
+                  // << " [ iterations: " << psolver->iterations() << "  error: " << psolver->error() << " ]"
                   << std::endl << std::flush;
         step();
 

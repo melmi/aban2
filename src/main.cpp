@@ -5,7 +5,6 @@
 #include "domain.h"
 #include "advection.h"
 #include "diffusion.h"
-#include "pressure.h"
 #include "projection.h"
 #include "tests.h"
 #include "solver.h"

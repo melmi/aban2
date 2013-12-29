@@ -8,32 +8,53 @@
 #ifndef _PROJECTION_H_
 #define _PROJECTION_H_
 
+#include <vector>
 #include <algorithm>
+#include <Eigen32/SparseCore>
 #include <Eigen32/IterativeLinearSolvers>
 
 #include "domain.h"
-#include "pressure.h"
 
 namespace aban2
 {
 
 class projection
 {
-    static double *get_div_ustar(domain *d);
+public:
+    projection(domain *_d);
 
-    static void apply_single_p_bc(domain *d, mesh_row *row, double *rhs, bcside side, double coeff);
+    ~projection();
 
-    static void apply_p_bc(domain *d, double *rhs);
+private:
+    typedef Eigen::Triplet<double> triplet_t;
+    typedef std::vector<triplet_t> triplet_vector;
+    typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> matrix_t;
+    typedef Eigen::BiCGSTAB<matrix_t> solver_t;
 
-    static double *get_pressure_rhs(domain *d);
+    domain *d;
+    double h2inv;
+    triplet_vector *raw_coeffs;
+    matrix_t *pmatrix;
+    solver_t *psolver;
+
+    // functions to make pressure coeffs matrix
+    void make_matrix();
+
+    void add_row(mesh_row *row);
+
+    void apply_row_bc(size_t ix0, size_t ix1, bctype bct);
+
+    // functions to make rhs of pressure equation
+    double *get_rhs();
+
+    void apply_rhs_bc(double *rhs);
+
+    void apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side);
 
 public:
-    typedef Eigen::BiCGSTAB<pressure::sparse_matrix> psolver;
+    void solve_p();
 
-    static void solve_p(domain *d, psolver *solver, pressure::sparse_matrix *A);
-
-    static void update_u(domain *d);
-
+    void update_u();
 };
 
 }

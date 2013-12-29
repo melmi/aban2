@@ -6,112 +6,153 @@
  */
 
 #include "projection.h"
-
 #include "gradient.h"
-
-#include <iostream>
 
 namespace aban2
 {
 
-double *projection::get_div_ustar(domain *d)
+projection::projection(domain *_d): d(_d)
 {
-    double *result = (double *)d->create_var(1);
-    gradient::divergance(d, d->ustar, result, &bcondition::u);
-    double rho_dt = d->rho / d->dt;
-    for (int i = 0; i < d->n; ++i) result[i] *= rho_dt;
-    return result;
+    h2inv = 1.0 / (d->delta * d->delta);
+
+    pmatrix = new matrix_t(d->n, d->n);
+
+    raw_coeffs = new triplet_vector();
+    make_matrix();
+    delete raw_coeffs;
+
+    psolver = new solver_t(*pmatrix);
 }
 
-void projection::apply_single_p_bc(domain *d, mesh_row *row, double *rhs, bcside side, double coeff)
+projection::~projection()
 {
-    size_t idx0, idx1;
+    delete pmatrix;
+    delete psolver;
+}
+
+/*
+ * functions to make pressure coeffs matrix
+ */
+
+void projection::make_matrix()
+{
+    for (size_t idir = 0; idir < NDIRS; ++idir)
+        for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
+        {
+            mesh_row *row = d->rows[idir] + irow;
+            add_row(row);
+        }
+
+    pmatrix->setFromTriplets(raw_coeffs->begin(), raw_coeffs->end());
+}
+
+void projection::add_row(mesh_row *row)
+{
+    size_t n = row->n;
+    size_t *row_idxs = d->get_row_idxs(row);
+    auto start_bc_type = d->boundaries[row->start_code]->ptype;
+    auto end_bc_type = d->boundaries[row->end_code]->ptype;
+
+    for (size_t i = 1; i < n - 1; ++i)
+    {
+        size_t ix = row_idxs[i];
+        raw_coeffs->push_back(triplet_t(ix, row_idxs[i - 1], +1.0 * h2inv));
+        raw_coeffs->push_back(triplet_t(ix, ix             , -2.0 * h2inv));
+        raw_coeffs->push_back(triplet_t(ix, row_idxs[i + 1], +1.0 * h2inv));
+    }
+
+    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_type);
+    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_type  );
+
+    delete[] row_idxs;
+}
+
+void projection::apply_row_bc(size_t ix0 , size_t ix1, bctype bct)
+{
+    if (bct == bctype::neumann)
+        raw_coeffs->push_back(triplet_t(ix0, ix0, -1.0 * h2inv));
+    else
+        raw_coeffs->push_back(triplet_t(ix0, ix0, -3.0 * h2inv));
+
+    raw_coeffs->push_back(triplet_t(ix0, ix1, +1.0 * h2inv));
+}
+
+/*
+ * functions to make rhs of pressure equation
+ */
+
+double *projection::get_rhs()
+{
+    double *rhs = (double *)d->create_var(1);
+    gradient::divergance(d, d->ustar, rhs, &bcondition::u);
+    double rho_dt = d->rho / d->dt;
+    for (int i = 0; i < d->n; ++i) rhs[i] *= rho_dt;
+    apply_rhs_bc(rhs);
+    return rhs;
+}
+
+void projection::apply_rhs_bc(double *rhs)
+{
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+        {
+            mesh_row *row = d->rows[dir] + irow;
+
+            apply_single_rhs_bc(row, rhs, bcside::start);
+            apply_single_rhs_bc(row, rhs, bcside::end);
+        }
+}
+
+void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
+{
+    size_t idx;
     bcondition *bc;
     double dx;
 
     if (side == bcside::start)
     {
         bc = d->boundaries[row->start_code];
-        idx0 = d->cellno(row, 0);
-        idx1 = d->cellno(row, 1);
+        idx = d->cellno(row, 0);
         dx = -d->delta / 2.0;
     }
     else
     {
         bc = d->boundaries[row->end_code];
-        idx0 = d->cellno(row, row->n - 1);
-        idx1 = d->cellno(row, row->n - 2);
+        idx = d->cellno(row, row->n - 1);
         dx = +d->delta / 2.0;
     }
 
     if (bc->ptype == bctype::dirichlet)
     {
         double p = bc->p(d, row, bcside::start, row->dir);
-        rhs[idx0] -= 6.0 * p * coeff;
-        rhs[idx1] -= 2.0 * p * coeff;
+        rhs[idx] -= 2.0 * p * h2inv;
     }
     else
     {
         double rhog = d->rho * d->g.components[row->dir] * dx;
-        rhs[idx0] -= 6.0 * rhog * coeff;
-        rhs[idx1] -= 2.0 * rhog * coeff;
+        rhs[idx] -= 2.0 * rhog * h2inv;
     }
 }
 
-void projection::apply_p_bc(domain *d, double *rhs)
+/*
+ * public functions
+ */
+
+void projection::solve_p()
 {
-    double coeff = 1.0 / d->delta / d->delta / 4.0;
-
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-
-            apply_single_p_bc(d, row, rhs, bcside::start, coeff);
-            apply_single_p_bc(d, row, rhs, bcside::end, coeff);
-        }
-}
-
-double *projection::get_pressure_rhs(domain *d)
-{
-    double *rhs = get_div_ustar(d);
-    std::copy_n(rhs, d->n, d->u[0]);
-    apply_p_bc(d, rhs);
-    std::copy_n(rhs, d->n, d->u[1]);
-    return rhs;
-}
-
-void projection::solve_p(domain *d, psolver *solver, pressure::sparse_matrix *A)
-{
-    double *rhs = get_pressure_rhs(d);
-
-    Eigen::VectorXd b(d->n), x(d->n);//, x0(d->n);
-    for (int i = 0; i < d->n; ++i)
-    {
-        b[i] = rhs[i];
-        // x0[i] = d->p[i];
-    }
+    double *rhs = get_rhs();
+    Eigen::VectorXd b(d->n), x(d->n);
+    for (int i = 0; i < d->n; ++i) b[i] = rhs[i];
     delete[] rhs;
-
-    // std::cout << ((*A)*x0 - b).norm() / b.norm() << '\t';
-    x = solver->solve(b);
-    // std::cout << ((*A)*x - b).norm() / b.norm() << '\t';
-    // x = solver->solveWithGuess(b, x0);
-    // std::cout << ((*A)*x - b).norm() / b.norm() << std::endl;
-
+    x = psolver->solve(b);
     for (int i = 0; i < d->n; ++i) d->p[i] = x[i];
 }
 
-void projection::update_u(domain *d)
+void projection::update_u()
 {
-    double **grad_p = (double **)d->create_var(2);
-    gradient::of_scalar(d, d->p, grad_p, &bcondition::p);
-
-    for (int i = 0; i < d->n; ++i)
-        for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] + (- grad_p[dir][i] / d->rho + d->g.components[dir]) * d->dt;
-
-    d->delete_var(2, grad_p);
+    // for (int i = 0; i < d->n; ++i)
+    //     for (int dir = 0; dir < NDIRS; ++dir)
+    //         d->u[dir][i] = d->ustar[dir][i] + (- d->gradp[dir][i] / d->rho + d->g.components[dir]) * d->dt;
 }
 
 }
