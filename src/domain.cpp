@@ -57,6 +57,7 @@ void domain::register_vars()
 
     varlist.push_back(varinfo("p", vardim::scalar, true, &p));
     varlist.push_back(varinfo("u", vardim::vector, true, &u));
+    varlist.push_back(varinfo("uf", vardim::vector, true, &uf));
     varlist.push_back(varinfo("ustar", vardim::vector, true, &ustar));
 }
 

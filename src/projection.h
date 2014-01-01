@@ -46,6 +46,7 @@ private:
 public:
     void solve_p();
     void update_u();
+    void update_uf();
 };
 
 }

@@ -40,10 +40,10 @@ void advection::advect(domain *d, mesh_row *row, double *phi, double *u, bcondit
     }
 
     auto startbc = d->boundaries[row->start_code];
-    auto endbc = d->boundaries[row->end_code];
+    auto endbc   = d->boundaries[row->end_code  ];
 
-    mass[0] += (startbc->*bcfunc)(d, row, bcside::start, cmpnt) * u[0] * dt;
-    mass[n - 1] -= (startbc->*bcfunc)(d, row, bcside::end, cmpnt) * u[n - 1] * dt;
+    mass[0    ] += (startbc->*bcfunc)(d, row, bcside::start, cmpnt) * u[0    ] * dt;
+    mass[n - 1] -= (startbc->*bcfunc)(d, row, bcside::end  , cmpnt) * u[n - 1] * dt;
 
     for (size_t i = 0; i < n; ++i) phi[i] = mass[i] / dx;
 

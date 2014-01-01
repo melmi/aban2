@@ -150,4 +150,27 @@ void projection::update_u()
     d->delete_var(2, gradp);
 }
 
+void projection::update_uf()
+{
+    for (size_t idir = 0; idir < NDIRS; ++idir)
+        for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
+        {
+            mesh_row *row = d->rows[idir] + irow;
+            size_t n = row->n;
+
+            double *ustar = d-> extract_scalars(row, d->ustar[idir]);
+            double *p = d-> extract_scalars(row, d->p);
+            double *uf = new double[n];
+
+            for (size_t i = 0; i < n - 1; ++i)
+                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 + (p[i + 1] - p[i]) / d->h;
+
+            d->insert_scalars(row, d->uf, uf);
+
+            delete[] ustart;
+            delete[] p;
+            delete[] uf;
+        }
+}
+
 }

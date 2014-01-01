@@ -42,7 +42,7 @@ struct varinfo
 class domain: public mesh
 {
 public:
-    double **u, * *ustar, *p, *vof, *smooth_vof, **nb;
+    double **u, * *ustar, * *uf, *p, *vof, *smooth_vof, * *nb;
     double dt, tend, rho, mu;
     double t;
     vector g;
