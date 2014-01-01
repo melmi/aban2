@@ -18,10 +18,14 @@ class mesh_row;
 
 class advection
 {
-public:
-    static void advect(domain *d, mesh_row *row, double *phi, double *u, bcondition::func bcfunc, size_t cmpnt);
+    domain *d;
 
-    static void advect_ustar(domain *d);
+public:
+    advection(domain *_d): d(_d) {}
+
+    void advect(mesh_row *row, double *phi, bcondition::func bcfunc, size_t cmpnt);
+
+    void advect_ustar();
 };
 
 }

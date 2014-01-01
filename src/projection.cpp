@@ -163,11 +163,11 @@ void projection::update_uf()
             double *uf = new double[n];
 
             for (size_t i = 0; i < n - 1; ++i)
-                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 + (p[i + 1] - p[i]) / d->h;
+                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 + (p[i + 1] - p[i]) / d->delta;
 
-            d->insert_scalars(row, d->uf, uf);
+            d->insert_scalars(row, d->uf[idir], uf);
 
-            delete[] ustart;
+            delete[] ustar;
             delete[] p;
             delete[] uf;
         }

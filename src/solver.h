@@ -24,6 +24,7 @@ class solver
 public:
     domain *d;
     projection *projector;
+    advection *advector;
     std::string out_path;
 
     void write_step(size_t step);

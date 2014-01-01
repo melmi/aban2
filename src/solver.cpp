@@ -23,11 +23,13 @@ void solver::write_step(size_t step)
 solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
     projector = new projection(d);
+    advector = new advection(d);
 }
 
 solver::~solver()
 {
     delete projector;
+    delete advector;
 }
 
 void solver::step()
@@ -35,7 +37,7 @@ void solver::step()
     for (int i = 0; i < NDIRS; ++i)
         std::copy_n(d->u[i], d->n, d->ustar[i]);
 
-    advection::advect_ustar(d);
+    advector->advect_ustar();
     diffusion::diffuse_ustar(d);
     projector->solve_p();
     projector->update_u();
