@@ -55,10 +55,9 @@ bcdesc velocitybc::p(mesh_row *r, bcside side, size_t cmpnt)
     else
     {
         cellno = d->cellno(r, r->n - 1);
-        dx.components[r->dir] = -d->delta / 2.;
+        dx.components[r->dir] = +d->delta / 2.;
     }
-    double rho = d->rho;
-    // return d->p[cellno] + rho * (dx * d->g);
+
     return {cellno, 1, ((value - vector::from_data(d->ustar, cellno)) * dx) *(-d->rho / d->dt)};
 }
 
