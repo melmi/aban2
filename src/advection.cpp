@@ -43,11 +43,11 @@ void advection::advect(mesh_row *row, double *var, bcondition::func bcfunc, size
     auto startbc = d->boundaries[row->start_code];
     auto endbc   = d->boundaries[row->end_code  ];
 
-    double uf_start = startbc->u(d, row, bcside::start, row->dir);
-    double uf_end   = endbc  ->u(d, row, bcside::end  , row->dir);
+    double uf_start = startbc->face_val(&bcondition::u, d->u[row->dir], row, bcside::start, row->dir);
+    double uf_end   = endbc  ->face_val(&bcondition::u, d->u[row->dir], row, bcside::end  , row->dir);
 
-    mass[0    ] += (startbc->*bcfunc)(d, row, bcside::start, cmpnt) * uf_start * dt;
-    mass[n - 1] -= (end    ->*bcfunc)(d, row, bcside::end  , cmpnt) * uf_end   * dt;
+    mass[0    ] += startbc->face_val(bcfunc, var, row, bcside::start, cmpnt) * uf_start * dt;
+    mass[n - 1] -= endbc  ->face_val(bcfunc, var, row, bcside::end  , cmpnt) * uf_end   * dt;
 
     for (size_t i = 0; i < n; ++i) phi[i] = mass[i] / dx;
 

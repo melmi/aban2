@@ -24,11 +24,11 @@ void gradient::add_1d_row(domain *d, mesh_row *row, double *phi, double *grad, b
     grad[0] +=
         (
             0.5 * (phi[0] + phi[1]) -
-            (startbc->*bcfunc)(d, row, bcside::start, cmpnt)
+            startbc->row_face_val(bcfunc, phi, row, bcside::start, cmpnt)
         ) / dx;
     grad[n - 1] +=
         (
-            (endbc->*bcfunc)(d, row, bcside::end, cmpnt) -
+            endbc->row_face_val(bcfunc, phi, row, bcside::end, cmpnt) -
             0.5 * (phi[n - 1] + phi[n - 2])
         ) / dx;
 }

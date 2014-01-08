@@ -43,7 +43,7 @@ domain::domain(Json::Value *root): mesh(root)
 
     boundaries = new bcondition*[256];
     Json::Value boundaries_val = (*root)["boundaries"];
-    bcondition::create_bcs(&boundaries_val, boundaries);
+    bcondition::create_bcs(&boundaries_val, boundaries, this);
 
     register_vars();
     create_vars();

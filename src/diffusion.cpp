@@ -41,7 +41,7 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::type bctype, bcondition::func bcfunc, size_t cmpnt)
+void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt)
 {
     double dx = d->delta, dt = d->dt;
     size_t n = row->n;
@@ -55,28 +55,15 @@ void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondit
         bb[i] = 1.0 + 2.0 * coeff;
     }
 
-    auto startbc = d->boundaries[row->start_code];
-    auto endbc = d->boundaries[row->end_code];
+    auto startbc = (d->boundaries[row->start_code]->*bcfunc)(row, bcside::start, cmpnt);
+    auto endbc   = (d->boundaries[row->end_code  ]->*bcfunc)(row, bcside::end  , cmpnt);
 
-    if (startbc->*bctype == aban2::bctype::dirichlet)
-    {
-        bb[0] = 1.0 + 3.0 * coeff;
-        phi[0] += 2.0 * coeff *  (startbc->*bcfunc)(d, row, bcside::start, cmpnt);
-    }
-    else
-    {
-        bb[0] = 1.0 + coeff;
-    }
+    bb[0] = 1.0 - (2.0 * startbc.coeff - 3.0) * coeff;
+    phi[0] += 2.0 * coeff * startbc.val;
 
-    if (endbc->*bctype == aban2::bctype::dirichlet)
-    {
-        bb[n - 1] = 1.0 + 3.0 * coeff;
-        phi[n - 1] +=  2.0 * coeff * (endbc->*bcfunc)(d, row, bcside::end, cmpnt);
-    }
-    else
-    {
-        bb[n - 1] = 1.0 + coeff;
-    }
+    bb[n-1] = 1.0 - (2.0 * endbc.coeff - 3.0) * coeff;
+    phi[n-1] += 2.0 * coeff * endbc.val;
+
     solve_tridiagonal_in_place_destructive(phi, n, aa, bb, cc);
 
     delete aa;
@@ -93,7 +80,7 @@ void diffusion::diffuse_ustar(domain *d)
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
             {
                 double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
-                diffuse(d, row, cmpnt, d->mu, &bcondition::utype, &bcondition::u, icmpnt);
+                diffuse(d, row, cmpnt, d->mu, &bcondition::u, icmpnt);
                 d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
                 delete[] cmpnt;
             }

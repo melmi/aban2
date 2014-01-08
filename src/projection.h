@@ -37,7 +37,7 @@ private:
 
     void make_matrix();
     void add_row(mesh_row *row, triplet_vector *coeffs);
-    void apply_row_bc(size_t ix0, size_t ix1, bctype bct, triplet_vector *coeffs);
+    void apply_row_bc(size_t ix0, size_t ix1,bcdesc desc, triplet_vector *coeffs);
 
     double *get_rhs();
     void apply_rhs_bc(double *rhs);

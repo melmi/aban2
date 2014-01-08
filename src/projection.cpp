@@ -48,31 +48,27 @@ void projection::add_row(mesh_row *row, triplet_vector *coeffs)
 {
     size_t n = row->n;
     size_t *row_idxs = d->get_row_idxs(row);
-    auto start_bc_type = d->boundaries[row->start_code]->ptype;
-    auto end_bc_type = d->boundaries[row->end_code]->ptype;
+    auto start_bc_desc = d->boundaries[row->start_code]->p(row, bcside::start, 0);
+    auto end_bc_desc   = d->boundaries[row->end_code  ]->p(row, bcside::end  , 0);
 
     for (size_t i = 1; i < n - 1; ++i)
     {
         size_t ix = row_idxs[i];
-        coeffs->push_back(triplet_t(ix, row_idxs[i - 1], +1.0 * h2inv));
-        coeffs->push_back(triplet_t(ix, ix             , -2.0 * h2inv));
-        coeffs->push_back(triplet_t(ix, row_idxs[i + 1], +1.0 * h2inv));
+        coeffs->push_back({ix, row_idxs[i - 1], +1.0 * h2inv});
+        coeffs->push_back({ix, ix             , -2.0 * h2inv});
+        coeffs->push_back({ix, row_idxs[i + 1], +1.0 * h2inv});
     }
 
-    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_type, coeffs);
-    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_type  , coeffs);
+    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_desc, coeffs);
+    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_desc  , coeffs);
 
     delete[] row_idxs;
 }
 
-void projection::apply_row_bc(size_t ix0 , size_t ix1, bctype bct, triplet_vector *coeffs)
+void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc, triplet_vector *coeffs)
 {
-    if (bct == bctype::neumann)
-        coeffs->push_back(triplet_t(ix0, ix0, -1.0 * h2inv));
-    else
-        coeffs->push_back(triplet_t(ix0, ix0, -3.0 * h2inv));
-
-    coeffs->push_back(triplet_t(ix0, ix1, +1.0 * h2inv));
+    coeffs->push_back({ix0, ix0, (2.0 * desc.coeff - 3.0)*h2inv});
+    coeffs->push_back({ix0, ix1, +1.0 * h2inv});
 }
 
 double *projection::get_rhs()
@@ -99,33 +95,15 @@ void projection::apply_rhs_bc(double *rhs)
 
 void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
 {
-    size_t idx;
     bcondition *bc;
-    double dx;
-
     if (side == bcside::start)
-    {
         bc = d->boundaries[row->start_code];
-        idx = d->cellno(row, 0);
-        dx = -d->delta / 2.0;
-    }
     else
-    {
         bc = d->boundaries[row->end_code];
-        idx = d->cellno(row, row->n - 1);
-        dx = +d->delta / 2.0;
-    }
 
-    if (bc->ptype == bctype::dirichlet)
-    {
-        double p = bc->p(d, row, bcside::start, row->dir);
-        rhs[idx] -= 2.0 * p * h2inv;
-    }
-    else
-    {
-        double rhog = d->rho * d->g.components[row->dir] * dx;
-        rhs[idx] -= 2.0 * rhog * h2inv;
-    }
+    auto desc = bc->p(row, bcside::start, row->dir);
+
+    rhs[desc.cellno] -= 2.0 * desc.val * h2inv;
 }
 
 void projection::solve_p()

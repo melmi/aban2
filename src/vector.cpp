@@ -28,4 +28,14 @@ double vector::operator*(vector v)
     return x * v.x + y * v.y + z * v.z;
 }
 
+vector vector::operator+(vector v)
+{
+    return {x + v.x, y + v.y, z + v.z};
+}
+
+vector vector::operator-(vector v)
+{
+    return {x + v.x, y + v.y, z + v.z};
+}
+
 }

@@ -9,6 +9,7 @@
 #define _BCONDITION_H_
 
 #include <jsoncpp/json/json.h>
+#include "vector.h"
 
 namespace aban2
 {
@@ -21,49 +22,58 @@ enum class bcside
     start, end
 };
 
-enum class bctype
+struct bcdesc
 {
-    neumann, dirichlet
+    // phi_face = coeff * phi[cellno] + val
+
+    size_t cellno;
+    double coeff;
+    double val;
 };
 
 class bcondition
 {
 public:
+    typedef bcdesc(bcondition::*func)(mesh_row *, bcside, size_t);
 
-    typedef double(bcondition::*func)(domain *, mesh_row *, bcside, size_t);
-    typedef bctype bcondition::*type;
+    static void create_bcs(Json::Value *bcroot, bcondition **boundaries, domain *_d);
 
-    bctype voftype, utype, ptype;
+    double face_val(func f, double *phi, mesh_row *r, bcside side, size_t cmpnt);
+    double row_face_val(func f, double *phi, mesh_row *r, bcside side, size_t cmpnt);
 
-    virtual double p(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
-    virtual double u(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
-    virtual double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt) = 0;
+    domain *d;
 
-    static void create_bcs(Json::Value *bcroot, bcondition **boundaries);
+    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt) = 0;
+    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt) = 0;
+    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt) = 0;
+
+    bcondition(domain *_d): d(_d) {}
 };
 
 class velocitybc: public bcondition
 {
 public:
-    double value[3];
+    vector value;
 
-    double p(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-    double u(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-    double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
 
-    velocitybc(Json::Value *bcdata);
+    velocitybc(Json::Value *bcdata, domain *_d);
 };
 
 class pressurebc: public bcondition
 {
 public:
+    pressurebc(domain *_d): bcondition(_d) {}
+
     double value;
 
-    double p(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-    double u(domain *d, mesh_row *r, bcside side, size_t cmpnt);
-    double vof(domain *d, mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
 
-    pressurebc(Json::Value *bcdata);
+    pressurebc(Json::Value *bcdata, domain *_d);
 };
 
 }

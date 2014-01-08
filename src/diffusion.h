@@ -21,7 +21,7 @@ class diffusion
 public:
     static void solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c);
 
-    static void diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::type bctype, bcondition::func bcfunc, size_t cmpnt);
+    static void diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt);
 
     static void diffuse_ustar(domain *d);
 };
