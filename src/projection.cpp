@@ -67,7 +67,7 @@ void projection::add_row(mesh_row *row, triplet_vector *coeffs)
 
 void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc, triplet_vector *coeffs)
 {
-    coeffs->push_back({ix0, ix0, (2.0 * desc.coeff - 3.0)*h2inv});
+    coeffs->push_back({ix0, ix0, (2.0 * desc.sw - 3.0)*h2inv});
     coeffs->push_back({ix0, ix1, +1.0 * h2inv});
 }
 
@@ -95,15 +95,9 @@ void projection::apply_rhs_bc(double *rhs)
 
 void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
 {
-    bcondition *bc;
-    if (side == bcside::start)
-        bc = d->boundaries[row->start_code];
-    else
-        bc = d->boundaries[row->end_code];
-
-    auto desc = bc->p(row, bcside::start, row->dir);
-
-    rhs[desc.cellno] -= 2.0 * desc.val * h2inv;
+    bcondition *bc = side == bcside::start ? d->boundaries[row->start_code] : d->boundaries[row->end_code];
+    auto desc = bc->p(row, side, row->dir);
+    rhs[desc.cellno] -= 2.0 * desc.cte * h2inv;
 }
 
 void projection::solve_p()
@@ -134,13 +128,12 @@ void projection::update_uf()
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
             mesh_row *row = d->rows[idir] + irow;
-            size_t n = row->n;
 
-            double *ustar = d-> extract_scalars(row, d->ustar[idir]);
-            double *p = d-> extract_scalars(row, d->p);
-            double *uf = new double[n];
+            double *ustar = d->extract_scalars(row, d->ustar[idir]);
+            double *p = d->extract_scalars(row, d->p);
+            double *uf = new double[row->n];
 
-            for (size_t i = 0; i < n - 1; ++i)
+            for (size_t i = 0; i < row->n - 1; ++i)
                 uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 + (p[i + 1] - p[i]) / d->delta;
 
             d->insert_scalars(row, d->uf[idir], uf);

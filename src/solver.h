@@ -21,12 +21,14 @@ namespace aban2
 
 class solver
 {
-public:
+private:
     domain *d;
     projection *projector;
     advection *advector;
     std::string out_path;
 
+    void apply_source_terms();
+public:
     void write_step(size_t step);
 
     solver(domain *_d, std::string _out_path);

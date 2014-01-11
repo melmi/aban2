@@ -17,8 +17,8 @@ int main(int argc, char const *argv[])
     cout << "Reading mesh" << endl;
     domain *d = domain::create_from_file("mesh/cavity10x10.json");
     solver s(d, "out/out");
-    s.step();
-    s.run(1);
+    // s.step();
+    s.run(10);
 
     return 0;
 }

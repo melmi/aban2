@@ -24,11 +24,10 @@ enum class bcside
 
 struct bcdesc
 {
-    // phi_face = coeff * phi[cellno] + val
-
+    // phi_f = sw * (phi_P + (r_f-r_P) * grad) + cte
+    // sw should be 0 or 1
     size_t cellno;
-    double coeff;
-    double val;
+    double sw, grad, cte;
 };
 
 class bcondition
@@ -38,8 +37,8 @@ public:
 
     static void create_bcs(Json::Value *bcroot, bcondition **boundaries, domain *_d);
 
-    double face_val(func f, double *phi, mesh_row *r, bcside side, size_t cmpnt);
-    double row_face_val(func f, double *phi, mesh_row *r, bcside side, size_t cmpnt);
+    double face_val(func f, double *phi, mesh_row *row, bcside side, size_t cmpnt);
+    double row_face_val(func f, double *phi, mesh_row *row, bcside side, size_t cmpnt);
 
     domain *d;
 

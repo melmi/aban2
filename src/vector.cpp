@@ -35,7 +35,7 @@ vector vector::operator+(vector v)
 
 vector vector::operator-(vector v)
 {
-    return {x + v.x, y + v.y, z + v.z};
+    return {x - v.x, y - v.y, z - v.z};
 }
 
 }

@@ -39,8 +39,10 @@ void solver::step()
 
     advector->advect_ustar();
     diffusion::diffuse_ustar(d);
+    apply_source_terms();
     projector->solve_p();
     projector->update_u();
+    projector->update_uf();
 
     d->t += d->dt;
 }
@@ -59,6 +61,16 @@ void solver::run(double tend)
 
         if ((it + 1) % d->step_write == 0)
             write_step((it + 1) / d->step_write);
+    }
+}
+
+void solver::apply_source_terms()
+{
+    for (size_t i = 0; i < d->n; ++i)
+    {
+        d->ustar[0][i] += d->g.components[0] * d->dt;
+        d->ustar[1][i] += d->g.components[1] * d->dt;
+        d->ustar[2][i] += d->g.components[2] * d->dt;
     }
 }
 

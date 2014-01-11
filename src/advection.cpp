@@ -21,7 +21,7 @@ void advection::advect(mesh_row *row, double *var, bcondition::func bcfunc, size
     double dx = d->delta, dt = d->dt;
     size_t n = row->n;
 
-    double *u = d->extract_scalars(row, d->u[row->dir]);
+    double *u = d->extract_scalars(row, d->uf[row->dir]);
     double *phi = d->extract_scalars(row, var);
     double *grad = gradient::get_1d_row(d, row, phi, bcfunc, cmpnt);
     double *mass = new double[n];

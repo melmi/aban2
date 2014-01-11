@@ -58,11 +58,11 @@ void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondit
     auto startbc = (d->boundaries[row->start_code]->*bcfunc)(row, bcside::start, cmpnt);
     auto endbc   = (d->boundaries[row->end_code  ]->*bcfunc)(row, bcside::end  , cmpnt);
 
-    bb[0] = 1.0 - (2.0 * startbc.coeff - 3.0) * coeff;
-    phi[0] += 2.0 * coeff * startbc.val;
+    bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * coeff;
+    phi[0] += 2.0 * coeff * startbc.cte;
 
-    bb[n-1] = 1.0 - (2.0 * endbc.coeff - 3.0) * coeff;
-    phi[n-1] += 2.0 * coeff * endbc.val;
+    bb[n-1] = 1.0 - (2.0 * endbc.sw - 3.0) * coeff;
+    phi[n-1] += 2.0 * coeff * endbc.cte;
 
     solve_tridiagonal_in_place_destructive(phi, n, aa, bb, cc);
 

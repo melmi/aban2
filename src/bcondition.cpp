@@ -28,48 +28,44 @@ void bcondition::create_bcs(Json::Value *bcroot, bcondition **boundaries, domain
     }
 }
 
-double bcondition::face_val(bcondition::func f, double *phi, mesh_row *r, bcside side, size_t cmpnt)
+double bcondition::face_val(bcondition::func f, double *phi, mesh_row *row, bcside side, size_t cmpnt)
 {
-    bcdesc desc = (this->*f)(r, side, cmpnt);
-    return phi[desc.cellno] * desc.coeff + desc.val;
+    bcdesc desc = (this->*f)(row, side, cmpnt);
+    double dx = side == bcside::start ? -d->delta / 2.0 : d->delta / 2.0;
+    return desc.sw * (phi[desc.cellno] + dx * desc.grad) + desc.cte;
 }
 
-double bcondition::row_face_val(bcondition::func f, double *phi, mesh_row *r, bcside side, size_t cmpnt)
+double bcondition::row_face_val(bcondition::func f, double *phi, mesh_row *row, bcside side, size_t cmpnt)
 {
-    bcdesc desc = (this->*f)(r, side, cmpnt);
-    double val = side == bcside::start ? phi[0] : phi[r->n - 1];
-    return val * desc.coeff + desc.val;
+    bcdesc desc = (this->*f)(row, side, cmpnt);
+    double dx = side == bcside::start ? -d->delta / 2.0 : d->delta / 2.0;
+    double val = side == bcside::start ? phi[0] : phi[row->n - 1];
+    return desc.sw * (val + dx * desc.grad) + desc.cte;
 }
 
 //////////////////////////  velocitybc
 
 bcdesc velocitybc::p(mesh_row *r, bcside side, size_t cmpnt)
 {
-    size_t cellno;
-    vector dx;
-    if (side == bcside::start)
+    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
+    return
     {
-        cellno =  d->cellno(r, 0);
-        dx.components[r->dir] = -d->delta / 2.;
-    }
-    else
-    {
-        cellno = d->cellno(r, r->n - 1);
-        dx.components[r->dir] = +d->delta / 2.;
-    }
-
-    return {cellno, 1, ((value - vector::from_data(d->ustar, cellno)) * dx) *(-d->rho / d->dt)};
+        cellno,
+        1,
+        -d->rho / d->dt *(value - vector::from_data(d->ustar, cellno)).components[r->dir],
+        0
+    };
 }
 
 bcdesc velocitybc::u(mesh_row *r, bcside side, size_t cmpnt)
 {
-    return {0, 0, value.components[cmpnt]};
+    return {0, 0, 0, value.components[cmpnt]};
 }
 
 bcdesc velocitybc::vof(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return {cellno, 1, 0};
+    return {cellno, 1, 0, 0};
 }
 
 velocitybc::velocitybc(Json::Value *bcdata, domain *_d): bcondition(_d)
@@ -84,21 +80,19 @@ velocitybc::velocitybc(Json::Value *bcdata, domain *_d): bcondition(_d)
 
 bcdesc pressurebc::p(mesh_row *r, bcside side, size_t cmpnt)
 {
-    return {0, 0, value};
+    return {0, 0, 0, value};
 }
 
 bcdesc pressurebc::u(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    // return d->u[cmpnt][cellno];
-    return {cellno, 1, 0};
+    return {cellno, 1, 0, 0};
 }
 
 bcdesc pressurebc::vof(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    // return d->vof[cellno];
-    return {cellno, 1, 0};
+    return {cellno, 1, 0, 0};
 }
 
 pressurebc::pressurebc(Json::Value *bcdata, domain *_d): bcondition(_d)
