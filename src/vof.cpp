@@ -5,10 +5,12 @@
 
 aban2::vof::vof(aban2::domain *_d): d(_d)
 {
+    diffusor = new diffusion(d);
 }
 
 aban2::vof::~vof()
 {
+    delete d;
 }
 
 void aban2::vof::calc_nbs()
@@ -19,7 +21,7 @@ void aban2::vof::calc_nbs()
         {
             mesh_row *row = d->rows[dir] + irow;
             double *line = d->extract_scalars(row, d->smooth_vof);
-            diffusion::diffuse(d, row, line, 1, &bcondition::vof, dir);
+            diffusor->diffuse(row, line, 1, &bcondition::vof, dir);
             d->insert_scalars(row, d->smooth_vof, line);
             delete[] line;
         }

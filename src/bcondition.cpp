@@ -21,10 +21,10 @@ void bcondition::create_bcs(Json::Value *bcroot, bcondition **boundaries, domain
     for (auto &x : bnames)
     {
         Json::Value bc = (*bcroot)[x];
-        if (bc["type"].asString() == "velocity")
-            boundaries[x[0]] = new velocitybc(&bc, _d);
-        if (bc["type"].asString() == "pressure")
-            boundaries[x[0]] = new pressurebc(&bc, _d);
+        if (bc["type"].asString() == "q")
+            boundaries[x[0]] = new qbc(&bc, _d);
+        if (bc["type"].asString() == "p")
+            boundaries[x[0]] = new pbc(&bc, _d);
     }
 }
 
@@ -43,32 +43,32 @@ double bcondition::row_face_val(bcondition::func f, double *phi, mesh_row *row, 
     return desc.sw * (val + dx * desc.grad) + desc.cte;
 }
 
-//////////////////////////  velocitybc
+//////////////////////////  qbc
 
-bcdesc velocitybc::p(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc qbc::p(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
     return
     {
         cellno,
         1,
-        -d->rho / d->dt *(value - vector::from_data(d->ustar, cellno)).components[r->dir],
+        - (value - vector::from_data(d->qstar, cellno)).components[r->dir] / d->dt,
         0
     };
 }
 
-bcdesc velocitybc::u(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc qbc::q(mesh_row *r, bcside side, size_t cmpnt)
 {
     return {0, 0, 0, value.components[cmpnt]};
 }
 
-bcdesc velocitybc::vof(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc qbc::vof(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
     return {cellno, 1, 0, 0};
 }
 
-velocitybc::velocitybc(Json::Value *bcdata, domain *_d): bcondition(_d)
+qbc::qbc(Json::Value *bcdata, domain *_d): bcondition(_d)
 {
     Json::Value bcval = (*bcdata)["value"];
     value.components[0] = bcval[0].asDouble();
@@ -76,26 +76,26 @@ velocitybc::velocitybc(Json::Value *bcdata, domain *_d): bcondition(_d)
     value.components[2] = bcval[2].asDouble();
 }
 
-//////////////////////////  pressurebc
+//////////////////////////  pbc
 
-bcdesc pressurebc::p(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc pbc::p(mesh_row *r, bcside side, size_t cmpnt)
 {
     return {0, 0, 0, value};
 }
 
-bcdesc pressurebc::u(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc pbc::q(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
     return {cellno, 1, 0, 0};
 }
 
-bcdesc pressurebc::vof(mesh_row *r, bcside side, size_t cmpnt)
+bcdesc pbc::vof(mesh_row *r, bcside side, size_t cmpnt)
 {
     size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
     return {cellno, 1, 0, 0};
 }
 
-pressurebc::pressurebc(Json::Value *bcdata, domain *_d): bcondition(_d)
+pbc::pbc(Json::Value *bcdata, domain *_d): bcondition(_d)
 {
     Json::Value bcval = (*bcdata)["value"];
     value = bcval.asDouble();

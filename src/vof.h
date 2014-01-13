@@ -9,6 +9,7 @@
 #define _VOF_H_
 
 #include "domain.h"
+#include "diffusion.h"
 
 namespace aban2
 {
@@ -16,12 +17,13 @@ namespace aban2
 class vof
 {
     domain *d;
+    diffusion *diffusor;
 public:
     vof(domain *_d);
     ~vof();
 
-    void calc_nbs(); 
-    void calc_dists(); 
+    void calc_nbs();
+    void calc_dists();
     void advect();
 };
 

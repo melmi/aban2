@@ -41,7 +41,7 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt)
+void diffusion::diffuse(mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt)
 {
     double dx = d->delta, dt = d->dt;
     size_t n = row->n;
@@ -71,7 +71,7 @@ void diffusion::diffuse(domain *d, mesh_row *row, double *phi, double D, bcondit
     delete cc;
 }
 
-void diffusion::diffuse_ustar(domain *d)
+void diffusion::diffuse_qstar()
 {
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
@@ -79,9 +79,9 @@ void diffusion::diffuse_ustar(domain *d)
             mesh_row *row = d->rows[dir] + irow;
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
             {
-                double *cmpnt = d->extract_scalars(row, d->ustar[icmpnt]);
-                diffuse(d, row, cmpnt, d->mu, &bcondition::u, icmpnt);
-                d->insert_scalars(row, d->ustar[icmpnt], cmpnt);
+                double *cmpnt = d->extract_scalars(row, d->qstar[icmpnt]);
+                diffuse(row, cmpnt, d->_nu, &bcondition::q, icmpnt);
+                d->insert_scalars(row, d->qstar[icmpnt], cmpnt);
                 delete[] cmpnt;
             }
         }

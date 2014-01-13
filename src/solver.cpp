@@ -8,7 +8,6 @@
 #include "solver.h"
 
 #include <iostream>
-#include <Eigen32/Eigenvalues>
 
 namespace aban2
 {
@@ -24,24 +23,31 @@ solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
     projector = new projection(d);
     advector = new advection(d);
+    diffusor = new diffusion(d);
 }
 
 solver::~solver()
 {
     delete projector;
     delete advector;
+    delete diffusor;
 }
 
 void solver::step()
 {
     for (int i = 0; i < NDIRS; ++i)
-        std::copy_n(d->u[i], d->n, d->ustar[i]);
+        std::copy_n(d->q[i], d->n, d->qstar[i]);
 
-    advector->advect_ustar();
-    diffusion::diffuse_ustar(d);
+    std::cout << "      advection " << std::endl;
+    advector->advect_qstar();
+    std::cout << "      diffusion " << std::endl;
+    diffusor->diffuse_qstar();
+    std::cout << "      source terms " << std::endl;
     apply_source_terms();
+    std::cout << "      pressure " << std::endl;
     projector->solve_p();
-    projector->update_u();
+    std::cout << "      updating " << std::endl;
+    projector->update_q();
     projector->update_uf();
 
     d->t += d->dt;
@@ -68,9 +74,9 @@ void solver::apply_source_terms()
 {
     for (size_t i = 0; i < d->n; ++i)
     {
-        d->ustar[0][i] += d->g.components[0] * d->dt;
-        d->ustar[1][i] += d->g.components[1] * d->dt;
-        d->ustar[2][i] += d->g.components[2] * d->dt;
+        d->qstar[0][i] += d->g.components[0] * d->_rho * d->dt;
+        d->qstar[1][i] += d->g.components[1] * d->_rho * d->dt;
+        d->qstar[2][i] += d->g.components[2] * d->_rho * d->dt;
     }
 }
 

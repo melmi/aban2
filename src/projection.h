@@ -10,10 +10,12 @@
 
 #include <vector>
 #include <algorithm>
-#include <Eigen32/SparseCore>
-#include <Eigen32/IterativeLinearSolvers>
+#include <seldon-5.2/Seldon.hxx>
+#include <seldon-5.2/SeldonSolver.hxx>
 
 #include "domain.h"
+
+#define SELDON_DEBUG_LEVEL_0
 
 namespace aban2
 {
@@ -25,19 +27,13 @@ public:
     ~projection();
 
 private:
-    typedef Eigen::Triplet<double> triplet_t;
-    typedef std::vector<triplet_t> triplet_vector;
-    typedef Eigen::SparseMatrix<double, Eigen::ColMajor, long> matrix_t;
-    typedef Eigen::BiCGSTAB<matrix_t> solver_t;
-
     domain *d;
     double h2inv;
-    matrix_t *pmatrix;
-    solver_t *psolver;
+    Seldon::Matrix<double, Seldon::General, Seldon::ArrayRowSparse> pmatrix;
 
     void make_matrix();
-    void add_row(mesh_row *row, triplet_vector *coeffs);
-    void apply_row_bc(size_t ix0, size_t ix1,bcdesc desc, triplet_vector *coeffs);
+    void add_row(mesh_row *row);
+    void apply_row_bc(size_t ix0, size_t ix1, bcdesc desc);
 
     double *get_rhs();
     void apply_rhs_bc(double *rhs);
@@ -45,7 +41,7 @@ private:
 
 public:
     void solve_p();
-    void update_u();
+    void update_q();
     void update_uf();
 };
 

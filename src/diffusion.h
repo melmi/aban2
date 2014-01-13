@@ -18,12 +18,17 @@ namespace aban2
 
 class diffusion
 {
-public:
+private:
+	domain* d;
+
     static void solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c);
 
-    static void diffuse(domain *d, mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt);
+public:
+    diffusion(domain *_d): d(_d) {}
 
-    static void diffuse_ustar(domain *d);
+    void diffuse(mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt);
+
+    void diffuse_qstar();
 };
 
 }

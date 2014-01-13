@@ -4,7 +4,7 @@
   "nk": 1,
   "delta": 1,
   "rho": 1000,
-  "mu": 1e-3,
+  "nu": 1e-3,
   "dt": 0.2,
   "g":[0,7,0],
   "codes": [
@@ -25,11 +25,11 @@
   ],
   "boundaries": {
     "1": {
-      "type": "pressure",
+      "type": "p",
       "value": 0
     },
     "3": {
-      "type": "pressure",
+      "type": "p",
       "value": 5
     }
   }

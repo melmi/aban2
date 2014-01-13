@@ -43,36 +43,36 @@ public:
     domain *d;
 
     virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt) = 0;
-    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt) = 0;
+    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt) = 0;
     virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt) = 0;
 
     bcondition(domain *_d): d(_d) {}
 };
 
-class velocitybc: public bcondition
+class qbc: public bcondition
 {
 public:
     vector value;
 
     virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt);
     virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
 
-    velocitybc(Json::Value *bcdata, domain *_d);
+    qbc(Json::Value *bcdata, domain *_d);
 };
 
-class pressurebc: public bcondition
+class pbc: public bcondition
 {
 public:
-    pressurebc(domain *_d): bcondition(_d) {}
+    pbc(domain *_d): bcondition(_d) {}
 
     double value;
 
     virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc u(mesh_row *r, bcside side, size_t cmpnt);
+    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt);
     virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
 
-    pressurebc(Json::Value *bcdata, domain *_d);
+    pbc(Json::Value *bcdata, domain *_d);
 };
 
 }

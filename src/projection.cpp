@@ -15,36 +15,26 @@ projection::projection(domain *_d): d(_d)
 {
     h2inv = 1.0 / (d->delta * d->delta);
 
-    pmatrix = new matrix_t(d->n, d->n);
+    pmatrix.Reallocate(d->n, d->n);
 
     make_matrix();
-
-    psolver = new solver_t(*pmatrix);
 }
 
 projection::~projection()
 {
-    delete pmatrix;
-    delete psolver;
 }
 
 void projection::make_matrix()
 {
-    triplet_vector *coeffs = new triplet_vector();
-
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
             mesh_row *row = d->rows[idir] + irow;
-            add_row(row, coeffs);
+            add_row(row);
         }
-
-    pmatrix->setFromTriplets(coeffs->begin(), coeffs->end());
-
-    delete coeffs;
 }
 
-void projection::add_row(mesh_row *row, triplet_vector *coeffs)
+void projection::add_row(mesh_row *row)
 {
     size_t n = row->n;
     size_t *row_idxs = d->get_row_idxs(row);
@@ -54,29 +44,28 @@ void projection::add_row(mesh_row *row, triplet_vector *coeffs)
     for (size_t i = 1; i < n - 1; ++i)
     {
         size_t ix = row_idxs[i];
-        coeffs->push_back({ix, row_idxs[i - 1], +1.0 * h2inv});
-        coeffs->push_back({ix, ix             , -2.0 * h2inv});
-        coeffs->push_back({ix, row_idxs[i + 1], +1.0 * h2inv});
+        pmatrix.AddInteraction(ix, row_idxs[i - 1], +1.0 * h2inv);
+        pmatrix.AddInteraction(ix, ix             , -2.0 * h2inv);
+        pmatrix.AddInteraction(ix, row_idxs[i + 1], +1.0 * h2inv);
     }
 
-    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_desc, coeffs);
-    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_desc  , coeffs);
+    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_desc);
+    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_desc  );
 
     delete[] row_idxs;
 }
 
-void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc, triplet_vector *coeffs)
+void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
 {
-    coeffs->push_back({ix0, ix0, (2.0 * desc.sw - 3.0)*h2inv});
-    coeffs->push_back({ix0, ix1, +1.0 * h2inv});
+    pmatrix.AddInteraction(ix0, ix0, (2.0 * desc.sw - 3.0)*h2inv);
+    pmatrix.AddInteraction(ix0, ix1, +1.0 * h2inv);
 }
 
 double *projection::get_rhs()
 {
     double *rhs = (double *)d->create_var(1);
-    gradient::divergance(d, d->ustar, rhs, &bcondition::u);
-    double rho_dt = d->rho / d->dt;
-    for (int i = 0; i < d->n; ++i) rhs[i] *= rho_dt;
+    gradient::divergance(d, d->qstar, rhs, &bcondition::q);
+    for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
 }
@@ -103,21 +92,35 @@ void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
 void projection::solve_p()
 {
     double *rhs = get_rhs();
-    Eigen::VectorXd b(d->n), x(d->n);
-    for (int i = 0; i < d->n; ++i) b[i] = rhs[i];
+    Seldon::Vector<double> b(d->n), x(d->n);
+    x.SetData(d->n, d->p);
+    b.SetData(d->n, rhs);
+
+    Seldon::Preconditioner_Base precond;
+
+    Seldon::Iteration<double> iter(1000, 1e-3);
+    iter.HideMessages();
+    iter.SetInitGuess(false);
+
+    int error = Seldon::BiCgStab(pmatrix, x, b, precond, iter);
+
+    std::cout << "                   #iterations: " << iter.GetNumberIteration() << std::endl;
+    std::cout << "                   successful:  " << (error == 0) << std::endl;
+
+    x.Nullify();
+    b.Nullify();
+
     delete[] rhs;
-    x = psolver->solve(b);
-    for (int i = 0; i < d->n; ++i) d->p[i] = x[i];
 }
 
-void projection::update_u()
+void projection::update_q()
 {
     double **gradp = (double **)d->create_var(2);
     gradient::of_scalar(d, d->p, gradp, &bcondition::p);
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] / d->rho * d->dt;
+            d->q[dir][i] = d->qstar[dir][i] - gradp[dir][i] * d->dt;
 
     d->delete_var(2, gradp);
 }
@@ -129,16 +132,16 @@ void projection::update_uf()
         {
             mesh_row *row = d->rows[idir] + irow;
 
-            double *ustar = d->extract_scalars(row, d->ustar[idir]);
+            double *qstar = d->extract_scalars(row, d->qstar[idir]);
             double *p = d->extract_scalars(row, d->p);
             double *uf = new double[row->n];
 
             for (size_t i = 0; i < row->n - 1; ++i)
-                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 - (p[i + 1] - p[i]) / d->delta / d->rho;
+                uf[i] = (qstar[i] + qstar[i + 1]) / d->_rho / 2.0 - (p[i + 1] - p[i]) / d->delta / d->_rho;
 
             d->insert_scalars(row, d->uf[idir], uf);
 
-            delete[] ustar;
+            delete[] qstar;
             delete[] p;
             delete[] uf;
         }

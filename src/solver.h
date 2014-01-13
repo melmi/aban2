@@ -25,19 +25,17 @@ private:
     domain *d;
     projection *projector;
     advection *advector;
+    diffusion *diffusor;
     std::string out_path;
 
     void apply_source_terms();
 public:
-    void write_step(size_t step);
-
     solver(domain *_d, std::string _out_path);
     ~solver();
 
+    void write_step(size_t step);
     void step();
-
     void run(double tend);
-
 };
 
 }

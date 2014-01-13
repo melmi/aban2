@@ -6,7 +6,7 @@ OUTDIR = out
 
 CXX      = g++
 CXXFLAGS = -O3 -std=c++11
-LDFLAGS  = -ljsoncpp
+LDFLAGS  = -ljsoncpp -Xlinker -zmuldefs
 
 TARGET = $(BINDIR)/aban2
 SRCS   = $(wildcard $(SRCDIR)/*.cpp)

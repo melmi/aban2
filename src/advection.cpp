@@ -43,8 +43,8 @@ void advection::advect(mesh_row *row, double *var, bcondition::func bcfunc, size
     auto startbc = d->boundaries[row->start_code];
     auto endbc   = d->boundaries[row->end_code  ];
 
-    double uf_start = startbc->face_val(&bcondition::u, d->u[row->dir], row, bcside::start, row->dir);
-    double uf_end   = endbc  ->face_val(&bcondition::u, d->u[row->dir], row, bcside::end  , row->dir);
+    double uf_start = startbc->face_val(&bcondition::q, d->q[row->dir], row, bcside::start, row->dir) / d->_rho;
+    double uf_end   = endbc  ->face_val(&bcondition::q, d->q[row->dir], row, bcside::end  , row->dir) / d->_rho;
 
     mass[0    ] += startbc->face_val(bcfunc, var, row, bcside::start, cmpnt) * uf_start * dt;
     mass[n - 1] -= endbc  ->face_val(bcfunc, var, row, bcside::end  , cmpnt) * uf_end   * dt;
@@ -59,14 +59,14 @@ void advection::advect(mesh_row *row, double *var, bcondition::func bcfunc, size
     delete[] u;
 }
 
-void advection::advect_ustar()
+void advection::advect_qstar()
 {
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
         {
             mesh_row *row = d->rows[dir] + irow;
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
-                advect(row, d->ustar[icmpnt], &bcondition::u, icmpnt);
+                advect(row, d->qstar[icmpnt], &bcondition::q, icmpnt);
         }
 }
 

@@ -35,8 +35,8 @@ domain::domain(Json::Value *root): mesh(root)
     t = 0;
     dt = root->get("dt", 1).asDouble();
     tend = root->get("tend", 1).asDouble();
-    rho = root->get("rho", 1000).asDouble();
-    mu = root->get("mu", 1e-3).asDouble();
+    _rho = root->get("rho", 1000).asDouble();
+    _nu = root->get("nu", 1e-3).asDouble();
     Json::Value gnode = (*root)["g"];
     g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
     step_write = root->get("step_write", 1).asInt();
@@ -56,9 +56,10 @@ void domain::register_vars()
     varlist.push_back(varinfo("nb", vardim::vector, false, &nb));
 
     varlist.push_back(varinfo("p", vardim::scalar, true, &p));
-    varlist.push_back(varinfo("u", vardim::vector, true, &u));
     varlist.push_back(varinfo("uf", vardim::vector, false, &uf));
-    varlist.push_back(varinfo("ustar", vardim::vector, true, &ustar));
+
+    varlist.push_back(varinfo("q", vardim::vector, true, &q));
+    varlist.push_back(varinfo("qstar", vardim::vector, false, &qstar));
 }
 
 void domain::write_vtk(std::string file_name)

@@ -80,12 +80,12 @@ void adv_test1(domain *d)
                 {
                     size_t ix = d->cellnos[d->idx(i, j, k)];
                     // cout<<ix<<endl<<flush;
-                    d->u[0][ix] = d->u[1][ix] = d->u[2][ix] = 1;
+                    d->q[0][ix] = d->q[1][ix] = d->q[2][ix] = 1;
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
                     double z = k * d->delta + d->delta / 2.0;
                     double phi = exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
-                    d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
+                    d->qstar[0][ix] = d->qstar[1][ix] = d->qstar[2][ix] = phi;
                 }
 }
 
@@ -103,7 +103,7 @@ void diff_test1(domain *d)
                     double y = j * d->delta + d->delta / 2.0;
                     double z = k * d->delta + d->delta / 2.0;
                     double phi =  exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
-                    d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
+                    d->qstar[0][ix] = d->qstar[1][ix] = d->qstar[2][ix] = phi;
                 }
 }
 
@@ -120,9 +120,9 @@ void vortex(domain *d, double w, double x0, double y0)
                     double y = j * d->delta + d->delta / 2.0;
                     double z = k * d->delta + d->delta / 2.0;
 
-                    d->u[0][ix] = -w * (y - y0);// + 2.0 * x;
-                    d->u[1][ix] = w * (x - x0);
-                    d->u[2][ix] = 0;
+                    d->q[0][ix] = -w * (y - y0);// + 2.0 * x;
+                    d->q[1][ix] = w * (x - x0);
+                    d->q[2][ix] = 0;
                 }
 }
 

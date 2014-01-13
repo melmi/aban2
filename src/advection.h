@@ -25,7 +25,7 @@ public:
 
     void advect(mesh_row *row, double *phi, bcondition::func bcfunc, size_t cmpnt);
 
-    void advect_ustar();
+    void advect_qstar();
 };
 
 }
