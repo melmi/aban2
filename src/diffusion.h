@@ -27,6 +27,7 @@ public:
     diffusion(domain *_d): d(_d) {}
 
     void diffuse(mesh_row *row, double *phi, double D, bcondition::func bcfunc, size_t cmpnt);
+    void diffuse_ustar(mesh_row *row, double *ustar, size_t cmpnt);
 
     void diffuse_qstar();
 };

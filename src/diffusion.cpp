@@ -61,10 +61,40 @@ void diffusion::diffuse(mesh_row *row, double *phi, double D, bcondition::func b
     bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * coeff;
     phi[0] += 2.0 * coeff * startbc.cte;
 
-    bb[n-1] = 1.0 - (2.0 * endbc.sw - 3.0) * coeff;
-    phi[n-1] += 2.0 * coeff * endbc.cte;
+    bb[n - 1] = 1.0 - (2.0 * endbc.sw - 3.0) * coeff;
+    phi[n - 1] += 2.0 * coeff * endbc.cte;
 
     solve_tridiagonal_in_place_destructive(phi, n, aa, bb, cc);
+
+    delete aa;
+    delete bb;
+    delete cc;
+}
+
+void diffusion::diffuse_ustar(mesh_row *row, double *ustar, size_t cmpnt)
+{
+    double dx = d->delta, dt = d->dt;
+    size_t n = row->n;
+    double coeff = d->_mu * dt / dx / dx;
+
+    double *aa = new double[n], *bb = new double[n], *cc = new double[n];
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        aa[i] = cc[i] = -coeff;
+        bb[i] = 1.0 + 2.0 * coeff;
+    }
+
+    auto startbc = d->boundaries[row->start_code]->q(row, bcside::start, cmpnt);
+    auto endbc   = d->boundaries[row->end_code  ]->q(row, bcside::end  , cmpnt);
+
+    bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * coeff;
+    ustar[0] += 2.0 * coeff * startbc.cte / d->_rho;
+
+    bb[n - 1] = 1.0 - (2.0 * endbc.sw - 3.0) * coeff;
+    ustar[n - 1] += 2.0 * coeff * endbc.cte / d->_rho;
+
+    solve_tridiagonal_in_place_destructive(ustar, n, aa, bb, cc);
 
     delete aa;
     delete bb;
@@ -74,17 +104,23 @@ void diffusion::diffuse(mesh_row *row, double *phi, double D, bcondition::func b
 void diffusion::diffuse_qstar()
 {
     for (size_t dir = 0; dir < NDIRS; ++dir)
+    {
+        for (size_t i = 0; i < d->n; ++i) d->qstar[dir][i] /= d->_rho;
+
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
         {
             mesh_row *row = d->rows[dir] + irow;
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
             {
                 double *cmpnt = d->extract_scalars(row, d->qstar[icmpnt]);
-                diffuse(row, cmpnt, d->_nu, &bcondition::q, icmpnt);
+                diffuse_ustar(row, cmpnt, icmpnt);
                 d->insert_scalars(row, d->qstar[icmpnt], cmpnt);
                 delete[] cmpnt;
             }
         }
+        
+        for (size_t i = 0; i < d->n; ++i) d->qstar[dir][i] *= d->_rho;
+    }
 }
 
 }

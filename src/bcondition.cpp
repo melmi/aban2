@@ -59,7 +59,10 @@ bcdesc qbc::p(mesh_row *r, bcside side, size_t cmpnt)
 
 bcdesc qbc::q(mesh_row *r, bcside side, size_t cmpnt)
 {
-    return {0, 0, 0, value.components[cmpnt]};
+    // Althought cellno is not used for calculating q at boundary
+    // we need it to obtain rho and thus ustar, there.
+    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
+    return {cellno, 0, 0, value.components[cmpnt]};
 }
 
 bcdesc qbc::vof(mesh_row *r, bcside side, size_t cmpnt)

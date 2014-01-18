@@ -36,7 +36,7 @@ domain::domain(Json::Value *root): mesh(root)
     dt = root->get("dt", 1).asDouble();
     tend = root->get("tend", 1).asDouble();
     _rho = root->get("rho", 1000).asDouble();
-    _nu = root->get("nu", 1e-3).asDouble();
+    _mu = root->get("mu", 1e-3).asDouble();
     Json::Value gnode = (*root)["g"];
     g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
     step_write = root->get("step_write", 1).asInt();

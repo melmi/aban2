@@ -45,7 +45,7 @@ public:
     double **uf, *p;
     double **q, * *qstar;
     double *vof, *smooth_vof, * *nb;
-    double dt, tend, _rho, _nu;
+    double dt, tend, _rho, _mu;
     double t;
     vector g;
     int step_write;
