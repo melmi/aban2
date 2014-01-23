@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "domain.h"
+#include "ireconst.h"
 
 using namespace std;
 
@@ -32,9 +33,9 @@ string rowtostr(mesh_row *r)
 
 void print_cell_nos(domain *d)
 {
-    for (int i = d->ndir[0]-1; i > 0; --i)
+    for (int i = d->ndir[0] - 1; i > 0; --i)
     {
-        for (int j = 1; j < d->ndir[1]-1; ++j)
+        for (int j = 1; j < d->ndir[1] - 1; ++j)
         {
             size_t x = d->idx(i, j, 0);
             cout.width(4);
@@ -124,6 +125,53 @@ void vortex(domain *d, double w, double x0, double y0)
                     d->q[1][ix] = w * (x - x0);
                     d->q[2][ix] = 0;
                 }
+}
+
+void zalesak_disk_2d(domain *d)
+{
+    vector x0 {50, 75, 0};
+    double r = 15;
+
+    double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
+    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
+    vector h {d->delta, d->delta, d->delta};
+
+    // creating circle
+    for (size_t j = 0; j < d->ndir[1]; ++j)
+        for (size_t i = 0; i < d->ndir[0]; ++i)
+        {
+            size_t ix = d->cellnos[d->idx(i, j, 0)];
+            vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+            double l2[] = {(x + half[0] - x0).l2(), (x + half[1] - x0).l2(), (x + half[2] - x0).l2(), (x + half[3] - x0).l2()};
+            if (*std::min_element(begin(l2), end(l2)) > r2)
+            {
+                d->vof[ix] = 0;
+                continue;
+            }
+            if (*std::max_element(begin(l2), end(l2)) < r2)
+            {
+                d->vof[ix] = 1;
+                continue;
+            }
+
+            double min_dist = std::sqrt(*std::min_element(begin(l2), end(l2)));
+            vector n = x - x0;
+            n.normalize();
+            double alpha = r - min_dist;
+
+            ireconst reconst = ireconst::from_alpha(h, n, alpha);
+            d->vof[ix] = reconst.volume / v;
+        }
+
+    //removing slot
+    vector c {50, 72.5, 0}, l {5, 25, 0};
+    for (size_t j = 0; j < d->ndir[1]; ++j)
+        for (size_t i = 0; i < d->ndir[0]; ++i)
+        {
+            size_t ix = d->cellnos[d->idx(i, j, 0)];
+            vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+            if ((x.x > c.x - l.x / 2.0) && (x.x < c.x + l.x / 2.0) && (x.y > c.y - l.y / 2.0) && (x.y < c.y + l.y / 2.0)) d->vof[ix] = 0;
+        }
 }
 
 }

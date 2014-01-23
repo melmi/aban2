@@ -6,6 +6,7 @@
  */
 
 #include "vector.h"
+#include <cmath>
 
 namespace aban2
 {
@@ -36,6 +37,24 @@ vector vector::operator+(vector v)
 vector vector::operator-(vector v)
 {
     return {x - v.x, y - v.y, z - v.z};
+}
+
+double vector::l2()
+{
+    return x * x + y * y + z * z;
+}
+
+double vector::l()
+{
+    return std::sqrt(l2());
+}
+
+void vector::normalize()
+{
+    double len = l();
+    x /= len;
+    y /= len;
+    z /= len;
 }
 
 }

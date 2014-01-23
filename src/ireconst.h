@@ -32,6 +32,9 @@ namespace aban2
         void init(vector _c, vector _m);
         double get_flux(size_t dir, double delta, bool from_start);
 
+        void set_volume(); //sets volume assuming c, m and alpha  are known
+        void set_alpha();  //sets alpha  assuming c, m and volume are known
+
         double alpha_max;
         double base_vol;
         static vol_func_t vol_funcs[];
@@ -39,13 +42,10 @@ namespace aban2
     public:
         const double epsilon = 1e-7;
 
-        vector c;
-        vector m;
-        double alpha;
+        vector c; // cell lengths
+        vector m; // unit normal vector
+        double alpha; // distance of freesurface from the most far corner of cell which is inside
         double volume;
-
-        void set_volume(); //sets volume assuming c, m and alpha  are known
-        void set_alpha();  //sets alpha  assuming c, m and volume are known
 
         double get_flux(size_t dir, double delta, vector orig_m);
 

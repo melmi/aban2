@@ -32,8 +32,11 @@ struct vector
     vector operator+(vector v);
     vector operator-(vector v);
 
-    static vector from_data(double **data, size_t i);
+    double l2();
+    double l();
+    void normalize();
 
+    static vector from_data(double **data, size_t i);
 };
 
 }

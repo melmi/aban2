@@ -16,9 +16,11 @@ int main(int argc, char const *argv[])
 {
     cout << "Reading mesh" << endl;
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    solver s(d, "out/out");
+    zalesak_disk_2d(d);
+    d->write_vtk("out/test.vtk");
+    // solver s(d, "out/out");
     // s.step();
-    s.run(10);
+    // s.run(10);
 
     return 0;
 }
