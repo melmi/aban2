@@ -19,8 +19,7 @@ class fsm
 {
     domain *d;
     const double max_dist_coeff = 3.0;
-    double max_dist, h2;
-    double posinf, neginf;
+    double max_dist, h2, inf;
 
     // methods to detect interface cells
     enum class fullness
@@ -30,12 +29,12 @@ class fsm
     bool *on_interface;
     fullness *fullnesses;
     void detect_on_interface_cells();
-    bool is_on_interface(size_t i, size_t j, size_t k, size_t ix);
-    fullness get_fullness(size_t ix);
+    bool is_on_interface(size_t i, size_t j, size_t k, size_t no);
+    fullness get_fullness(size_t no);
 
     // methods to redistance
     void init_ls();
-    void set_new_phi(size_t i, size_t j, size_t k, size_t ix);
+    void set_new_phi(size_t i, size_t j, size_t k, size_t no);
     void set_for_bounds(size_t dir, bool asc, size_t &start, int &limit, int &step);
     double calculate_phis(bool iasc, bool jasc, bool kasc);
 

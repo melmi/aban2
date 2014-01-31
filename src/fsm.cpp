@@ -14,9 +14,9 @@ void fsm::detect_on_interface_cells()
         for (size_t j = 0; j < d->ndir[1]; ++j)
             for (size_t k = 0; k < d->ndir[2]; ++k)
             {
-                size_t ix;
-                if (!d->exists(i, j, k, ix)) continue;
-                fullnesses[ix] = get_fullness(ix);
+                size_t no;
+                if (!d->exists(i, j, k, no)) continue;
+                fullnesses[no] = get_fullness(no);
             }
 
     //calculating on_interfaces
@@ -24,32 +24,32 @@ void fsm::detect_on_interface_cells()
         for (size_t j = 0; j < d->ndir[1]; ++j)
             for (size_t k = 0; k < d->ndir[2]; ++k)
             {
-                size_t ix;
-                if (!d->exists(i, j, k, ix)) continue;
-                on_interface[ix] = is_on_interface(i, j, k, ix);
+                size_t no;
+                if (!d->exists(i, j, k, no)) continue;
+                on_interface[no] = is_on_interface(i, j, k, no);
             }
 }
 
-bool fsm::is_on_interface(size_t i, size_t j, size_t k, size_t ix)
+bool fsm::is_on_interface(size_t i, size_t j, size_t k, size_t no)
 {
-    if (fullnesses[ix] == fullness::half) return true;
-    if (fullnesses[ix] == fullness::empty) return false;
+    if (fullnesses[no] == fullness::half) return true;
+    if (fullnesses[no] == fullness::empty) return false;
 
     // if full
-    size_t neighb_ix;
-    if (d->exists_and_inside(i + 1, j, k, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
-    if (d->exists_and_inside(i - 1, j, k, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j + 1, k, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j - 1, k, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j, k + 1, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j, k - 1, neighb_ix))if (fullnesses[neighb_ix] == fullness::empty) return true;
+    size_t neighb_no;
+    if (d->exists_and_inside(i + 1, j, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
+    if (d->exists_and_inside(i - 1, j, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
+    if (d->exists_and_inside(i, j + 1, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
+    if (d->exists_and_inside(i, j - 1, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
+    if (d->exists_and_inside(i, j, k + 1, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
+    if (d->exists_and_inside(i, j, k - 1, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
     return false;
 }
 
-fsm::fullness fsm::get_fullness(size_t ix)
+fsm::fullness fsm::get_fullness(size_t no)
 {
-    if (d->vof[ix] < 1e-6)return fullness::empty;
-    if (d->vof[ix] > 1 - 1e-6)return fullness::full;
+    if (d->vof[no] < 1e-6)return fullness::empty;
+    if (d->vof[no] > 1.0 - 1e-6)return fullness::full;
     return fullness::half;
 }
 
@@ -58,51 +58,51 @@ void fsm::init_ls()
     for (size_t i = 0; i < d->n; ++i)
         if (!on_interface[i])
             if (fullnesses[i] == fullness::full)
-                d->ls[i] = neginf;
+                d->ls[i] = -inf;
             else
-                d->ls[i] = posinf;
-        else //for debug
-            d->ls[i] = 0;
+                d->ls[i] = inf;
 }
 
-void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t ix)
+void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t no)
 {
-    double coeff = d->ls[ix] > 0 ? 1 : -1;
-    double around[3][2] = {{posinf, posinf}, {posinf, posinf}, {posinf, posinf}};
+    double coeff = d->ls[no] > 0 ? 1 : -1;
+    double around[3][2] = {{inf, inf}, {inf, inf}, {inf, inf}};
 
     // around values
-    size_t neighb_ix;
-    if (d->exists_and_inside(i + 1, j, k, neighb_ix))around[0][0] = coeff * d->ls[neighb_ix];
-    if (d->exists_and_inside(i - 1, j, k, neighb_ix))around[0][1] = coeff * d->ls[neighb_ix];
-    if (d->exists_and_inside(i, j + 1, k, neighb_ix))around[1][0] = coeff * d->ls[neighb_ix];
-    if (d->exists_and_inside(i, j - 1, k, neighb_ix))around[1][1] = coeff * d->ls[neighb_ix];
-    if (d->exists_and_inside(i, j, k + 1, neighb_ix))around[2][0] = coeff * d->ls[neighb_ix];
-    if (d->exists_and_inside(i, j, k - 1, neighb_ix))around[2][1] = coeff * d->ls[neighb_ix];
+    size_t neighb_no;
+    if (d->exists_and_inside(i + 1, j, k, neighb_no))around[0][0] = coeff * d->ls[neighb_no];
+    if (d->exists_and_inside(i - 1, j, k, neighb_no))around[0][1] = coeff * d->ls[neighb_no];
+    if (d->exists_and_inside(i, j + 1, k, neighb_no))around[1][0] = coeff * d->ls[neighb_no];
+    if (d->exists_and_inside(i, j - 1, k, neighb_no))around[1][1] = coeff * d->ls[neighb_no];
+    if (d->exists_and_inside(i, j, k + 1, neighb_no))around[2][0] = coeff * d->ls[neighb_no];
+    if (d->exists_and_inside(i, j, k - 1, neighb_no))around[2][1] = coeff * d->ls[neighb_no];
 
     double xmin[] =
     {
         std::min(around[0][0], around[0][1]),
         std::min(around[1][0], around[1][1]),
         std::min(around[2][0], around[2][1]),
-        posinf
+        inf
     };
 
-    std::sort(xmin, xmin + NDIRS); //we already know that posinf is the biggest value
+    std::sort(xmin, xmin + NDIRS); //we already know that inf is the biggest value
 
     double xbar;
     for (int p = 0; p < NDIRS; ++p)
     {
-        double a = 1, b = 0, c = -h2;
+        double a = 0, b = 0, c = -h2;
         for (int i = 0; i < p + 1; ++i)
         {
-            b -= 2.0 * xmin[i];
+            a += 1.0;
+            b += -2.0 * xmin[i];
             c += xmin[i] * xmin[i];
         }
         xbar = (-b + std::sqrt(b * b - 4.0 * a * c)) / (2.0 * a);
+
         if (xbar < xmin[p + 1]) break;
     }
 
-    if (coeff * d->ls[ix] > xbar)d->ls[ix] = xbar;
+    if (coeff * d->ls[no] > xbar)d->ls[no] = coeff * xbar;
 }
 
 void fsm::set_for_bounds(size_t dir, bool asc, size_t &start, int &limit, int &step)
@@ -135,10 +135,10 @@ double fsm::calculate_phis(bool iasc, bool jasc, bool kasc)
         for (int j = jstart; j != jlimit; j += jstep)
             for (int k = kstart; k != klimit; k += kstep)
             {
-                size_t ix;
-                if (!d->exists(i, j, k, ix))continue;
-                if (on_interface[ix])continue;
-                set_new_phi(i, j, k, ix);
+                size_t no;
+                if (!d->exists(i, j, k, no))continue;
+                if (on_interface[no])continue;
+                set_new_phi(i, j, k, no);
             }
 }
 
@@ -146,8 +146,7 @@ fsm::fsm(domain *_d): d(_d)
 {
     h2 = d->delta * d->delta;
     max_dist = max_dist_coeff * d->delta;
-    posinf = std::sqrt((d->ndir[0] * d->ndir[0] + d->ndir[1] * d->ndir[1] + d->ndir[2] * d->ndir[2] + 1) * d->delta * d->delta);
-    neginf = -posinf;
+    inf = std::sqrt((d->ndir[0] * d->ndir[0] + d->ndir[1] * d->ndir[1] + d->ndir[2] * d->ndir[2] + 1) * d->delta * d->delta);
     on_interface = new bool[d->n];
     fullnesses = new fullness[d->n];
 }
