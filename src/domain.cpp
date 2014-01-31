@@ -52,6 +52,7 @@ domain::domain(Json::Value *root): mesh(root)
 void domain::register_vars()
 {
     varlist.push_back(varinfo("vof", vardim::scalar, true, &vof));
+    varlist.push_back(varinfo("ls", vardim::scalar, true, &ls));
     varlist.push_back(varinfo("smooth_vof", vardim::scalar, true, &smooth_vof));
     varlist.push_back(varinfo("nb", vardim::vector, true, &nb));
 

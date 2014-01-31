@@ -59,6 +59,8 @@ public:
     }
 
     bool exists(size_t i, size_t j, size_t k);
+    bool exists(size_t i, size_t j, size_t k, size_t &ix);
+    bool exists_and_inside(size_t i, size_t j, size_t k, size_t &ix);
 
 private:
 
