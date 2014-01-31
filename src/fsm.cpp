@@ -68,7 +68,7 @@ void fsm::init_ls()
 void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t ix)
 {
     double coeff = d->ls[ix] > 0 ? 1 : -1;
-    double around[][] = {{posinf, posinf}, {posinf, posinf}, {posinf, posinf}};
+    double around[3][2] = {{posinf, posinf}, {posinf, posinf}, {posinf, posinf}};
 
     // around values
     size_t neighb_ix;
@@ -79,7 +79,7 @@ void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t ix)
     if (d->exists_and_inside(i, j, k + 1, neighb_ix))around[2][0] = coeff * d->ls[neighb_ix];
     if (d->exists_and_inside(i, j, k - 1, neighb_ix))around[2][1] = coeff * d->ls[neighb_ix];
 
-    double xmin =
+    double xmin[] =
     {
         std::min(around[0][0], around[0][1]),
         std::min(around[1][0], around[1][1]),
@@ -87,7 +87,7 @@ void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t ix)
         posinf
     };
 
-    std::sort(xmin, xmin + 3); //we already know that posinf is the biggest value
+    std::sort(xmin, xmin + NDIRS); //we already know that posinf is the biggest value
 
     double xbar;
     for (int p = 0; p < NDIRS; ++p)
@@ -99,7 +99,7 @@ void fsm::set_new_phi(size_t i, size_t j, size_t k, size_t ix)
             c += xmin[i] * xmin[i];
         }
         xbar = (-b + std::sqrt(b * b - 4.0 * a * c)) / (2.0 * a);
-        if (xbar < xbar[p + 1]) break;
+        if (xbar < xmin[p + 1]) break;
     }
 
     if (coeff * d->ls[ix] > xbar)d->ls[ix] = xbar;
