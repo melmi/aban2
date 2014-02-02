@@ -141,7 +141,7 @@ void zalesak_disk_2d(domain *d)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {
             size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+            vector x {d->delta * i, d->delta * j, 0};
             double l2[] = {(x + half[0] - x0).l2(), (x + half[1] - x0).l2(), (x + half[2] - x0).l2(), (x + half[3] - x0).l2()};
             if (*std::min_element(begin(l2), end(l2)) > r2)
             {
@@ -164,13 +164,18 @@ void zalesak_disk_2d(domain *d)
         }
 
     //removing slot
-    vector c {50, 72.5, 0}, l {5, 25, 0};
+    double eps = 1e-4;
+    vector c {50, 72.5, 0}, l {5 + eps, 25 + eps, 0};
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {
             size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
-            if ((x.x > c.x - l.x / 2.0) && (x.x < c.x + l.x / 2.0) && (x.y > c.y - l.y / 2.0) && (x.y < c.y + l.y / 2.0)) d->vof[ix] = 0;
+            vector x {d->delta * i, d->delta * j, 0};
+            if (
+                (x.x > c.x - l.x / 2.0) &&
+                (x.x < c.x + l.x / 2.0) &&
+                (x.y > c.y - l.y / 2.0) &&
+                (x.y < c.y + l.y / 2.0)) d->vof[ix] = 0;
         }
 }
 

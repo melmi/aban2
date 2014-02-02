@@ -21,8 +21,8 @@ int main(int argc, char const *argv[])
     zalesak_disk_2d(d);
     // vof vofc(d);
     // vofc.calc_nbs();
-    fsm reditancer(d);
-    reditancer.redist();
+    voset vof(d);
+    vof.make_ls();
     cout<<"redist done"<<endl;
     d->write_vtk("out/test.vtk");
     // solver s(d, "out/out");

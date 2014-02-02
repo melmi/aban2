@@ -6,6 +6,7 @@
  */
 
 #include "domain.h"
+#include "voset.h"
 
 #ifndef _FSM_H
 #define _FSM_H
@@ -18,19 +19,10 @@ namespace aban2
 class fsm
 {
     domain *d;
-    const double max_dist_coeff = 3.0;
-    double max_dist, h2, inf;
+    double h2, inf;
 
-    // methods to detect interface cells
-    enum class fullness
-    {
-        full, empty, half
-    };
     bool *on_interface;
     fullness *fullnesses;
-    void detect_on_interface_cells();
-    bool is_on_interface(size_t i, size_t j, size_t k, size_t no);
-    fullness get_fullness(size_t no);
 
     // methods to redistance
     void init_ls();
@@ -39,7 +31,7 @@ class fsm
     double calculate_phis(bool iasc, bool jasc, bool kasc);
 
 public:
-    fsm(domain *_d);
+    fsm(domain *_d, bool *_on_interface, fullness *_fullnesses);
     ~fsm();
 
     void redist();

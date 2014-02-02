@@ -5,54 +5,6 @@
 namespace aban2
 {
 
-void fsm::detect_on_interface_cells()
-{
-    std::fill_n(on_interface, d->n, false);
-
-    //calculating fullnesses
-    for (size_t i = 0; i < d->ndir[0]; ++i)
-        for (size_t j = 0; j < d->ndir[1]; ++j)
-            for (size_t k = 0; k < d->ndir[2]; ++k)
-            {
-                size_t no;
-                if (!d->exists(i, j, k, no)) continue;
-                fullnesses[no] = get_fullness(no);
-            }
-
-    //calculating on_interfaces
-    for (size_t i = 0; i < d->ndir[0]; ++i)
-        for (size_t j = 0; j < d->ndir[1]; ++j)
-            for (size_t k = 0; k < d->ndir[2]; ++k)
-            {
-                size_t no;
-                if (!d->exists(i, j, k, no)) continue;
-                on_interface[no] = is_on_interface(i, j, k, no);
-            }
-}
-
-bool fsm::is_on_interface(size_t i, size_t j, size_t k, size_t no)
-{
-    if (fullnesses[no] == fullness::half) return true;
-    if (fullnesses[no] == fullness::empty) return false;
-
-    // if full
-    size_t neighb_no;
-    if (d->exists_and_inside(i + 1, j, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    if (d->exists_and_inside(i - 1, j, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j + 1, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j - 1, k, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j, k + 1, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    if (d->exists_and_inside(i, j, k - 1, neighb_no))if (fullnesses[neighb_no] == fullness::empty) return true;
-    return false;
-}
-
-fsm::fullness fsm::get_fullness(size_t no)
-{
-    if (d->vof[no] < 1e-6)return fullness::empty;
-    if (d->vof[no] > 1.0 - 1e-6)return fullness::full;
-    return fullness::half;
-}
-
 void fsm::init_ls()
 {
     for (size_t i = 0; i < d->n; ++i)
@@ -142,25 +94,19 @@ double fsm::calculate_phis(bool iasc, bool jasc, bool kasc)
             }
 }
 
-fsm::fsm(domain *_d): d(_d)
+fsm::fsm(domain *_d, bool *_on_interface, fullness *_fullnesses)
+    : d(_d), on_interface(_on_interface), fullnesses(_fullnesses)
 {
     h2 = d->delta * d->delta;
-    max_dist = max_dist_coeff * d->delta;
     inf = std::sqrt((d->ndir[0] * d->ndir[0] + d->ndir[1] * d->ndir[1] + d->ndir[2] * d->ndir[2] + 1) * d->delta * d->delta);
-    on_interface = new bool[d->n];
-    fullnesses = new fullness[d->n];
 }
 
 fsm::~fsm()
 {
-    delete[] on_interface;
-    delete[] fullnesses;
 }
 
 void fsm::redist()
 {
-    detect_on_interface_cells();
-
     init_ls();
 
     calculate_phis(true, true, true);

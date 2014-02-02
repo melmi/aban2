@@ -49,12 +49,17 @@ double vector::l()
     return std::sqrt(l2());
 }
 
-void vector::normalize()
+void vector::normalize(double epsilon)
 {
-    double len = l();
+    double len = l() + epsilon;
     x /= len;
     y /= len;
     z /= len;
+}
+
+void vector::normalize()
+{
+    normalize(0);
 }
 
 }

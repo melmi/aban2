@@ -35,6 +35,7 @@ struct vector
     double l2();
     double l();
     void normalize();
+    void normalize(double epsilon);
 
     static vector from_data(double **data, size_t i);
 };
