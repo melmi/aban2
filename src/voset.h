@@ -14,6 +14,7 @@ namespace aban2
 {
 
 class fsm;
+class ireconst;
 
 enum class fullness
 {
@@ -26,10 +27,9 @@ class voset
     domain *d;
     double *old_ls;
     double h3;
+    vector celldims;
 
-    bool *on_interface;
-    fullness *fullnesses;
-    fsm* redistancer;
+    fsm *redistancer;
 
     // methods to detect interface cells
     void detect_on_interface_cells();
@@ -42,6 +42,10 @@ class voset
     void calculate_interface_distances();
 
 public:
+    bool *on_interface;
+    fullness *fullnesses;
+    ireconst *reconsts;
+
     voset(domain *_d);
     ~voset();
 

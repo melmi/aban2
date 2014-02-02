@@ -14,16 +14,21 @@
 namespace aban2
 {
 
+class voset;
+
 class vof
 {
     domain *d;
-    diffusion *diffusor;
+    voset *vos;
+    double *vof_mass;
+    double h3;
+
+    double get_vof_flux(mesh_row *row, size_t i, double udt);
+    void advect_row(mesh_row *row);
 public:
     vof(domain *_d);
     ~vof();
 
-    void calc_nbs();
-    void calc_dists();
     void advect();
 };
 

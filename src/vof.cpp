@@ -2,77 +2,76 @@
 
 #include "diffusion.h"
 #include "gradient.h"
+#include "ireconst.h"
+#include "voset.h"
 
-#include <iostream>
-using namespace std;
-
-aban2::vof::vof(aban2::domain *_d): d(_d)
+namespace aban2
 {
-    diffusor = new diffusion(d);
+
+double vof::get_vof_flux(mesh_row *row, size_t i, double udt)
+{
+    size_t no = d->cellno(row, i);
+    if (vos->fullnesses[no] != fullness::half)return udt * d->vof[no];
+    return vos->reconsts[i].get_flux(row->dir, udt, vector::from_data(d->nb, no));
 }
 
-aban2::vof::~vof()
+void vof::advect_row(mesh_row *row)
 {
-    delete diffusor;
-}
+    double flux_vof, flux_q[3];
 
-void aban2::vof::calc_nbs()
-{
-    // creating smooth vof
-    std::copy_n(d->vof, d->n, d->smooth_vof);
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-            double *line = d->extract_scalars(row, d->smooth_vof);
-            diffusor->diffuse(row, line, 0.1, &bcondition::vof, dir);
-            d->insert_scalars(row, d->smooth_vof, line);
-            delete[] line;
-        }
+    double *uf = d->extract_scalars(row, d->uf[row->dir]);
+    double *row_mass = d->extract_scalars(row, vof_mass);
 
-    // calculating normals
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-            double *line = d->extract_scalars(row, d->smooth_vof);
-            double *grad = gradient::get_1d_row(d, row, line, &bcondition::vof, dir);
-            d->insert_scalars(row, d->nb[dir], grad);
-            delete[] line;
-            delete[] grad;
-        }
-
-    // normalizing normals
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector n = vector::from_data(d->nb, ix);
-            if (n.l2() < 0.01)
-                n = {0, 0, 0};
-            else
-                n.normalize();
-
-            d->nb[0][ix] = n.x;
-            d->nb[1][ix] = n.y;
-            d->nb[2][ix] = n.z;
-        }
-}
-
-void aban2::vof::calc_dists()
-{
-    // x^3-(x-a)^3+(x-b)^3 = a^3-3 a^2 x+3 a x^2-b^3+3 b^2 x-3 b x^2+x^3
-    //                     = x^3 + (3a-3b) x^2 + (-3a^2+3b^2) x + (a^3-b^3)
-
-    for (int i = 0; i < d->n; ++i)
+    for (size_t face = 0; face < d->n - 1; ++face)
     {
-        vector n = vector::from_data(d->nb, d->cellnos[i]);
-        double dmax = d->delta * (n.x + n.y + n.z);
+        size_t i = face, ii = face + 1;
+        double udt = uf[i] * d->dt;
 
+        if (udt > 0)
+            flux_vof = get_vof_flux(row, i, udt);
+        else
+            flux_vof = get_vof_flux(row, ii, udt);
+
+        row_mass[i ] -= flux_vof;
+        row_mass[ii] += flux_vof;
     }
+
+    auto startbc = d->boundaries[row->start_code];
+    auto endbc   = d->boundaries[row->end_code  ];
+
+    double uf_start = startbc->face_val(&bcondition::q, d->q[row->dir], row, bcside::start, row->dir) / d->_rho;
+    double uf_end   = endbc  ->face_val(&bcondition::q, d->q[row->dir], row, bcside::end  , row->dir) / d->_rho;
+
+    row_mass[0       ] += startbc->face_val(&bcondition::vof, d->vof, row, bcside::start, row->dir) * uf_start * d->dt;
+    row_mass[d->n - 1] -= endbc  ->face_val(&bcondition::vof, d->vof, row, bcside::end  , row->dir) * uf_end   * d->dt;
+
+    d->insert_scalars(row, vof_mass, row_mass);
+
+    delete[] row_mass;
+    delete[] uf;
 }
 
-void aban2::vof::advect()
+vof::vof(aban2::domain *_d): d(_d)
 {
-
+    h3 = d->delta * d->delta * d->delta;
+    vos = new voset(d);
+    double *vof_mass = new double[d->n];
 }
+
+vof::~vof()
+{
+    delete vos;
+    delete[] vof_mass;
+}
+
+void vof::advect()
+{
+    for (size_t i = 0; i < d->n; ++i) vof_mass[i] = d->vof[i] * h3;
+
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+            mesh_row *row = d->rows[dir] + irow;
+}
+
+} // aban2
+

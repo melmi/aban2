@@ -94,17 +94,20 @@ void voset::calculate_interface_distances()
     for (size_t i = 0; i < d->n; ++i)
         if (on_interface[i])
         {
-            ireconst reconst = ireconst::from_volume({1, 1, 1}, vector::from_data(d->nb, i), d->vof[i]);
-            d->ls[i] = vector(0.5, 0.5, 0.5) * reconst.m - reconst.alpha;
+            auto n = vector::from_data(d->nb, i);
+            reconsts[i] = ireconst::from_volume(celldims, n, h3 * d->vof[i]);
+            d->ls[i] = 0.5 * (celldims * reconsts[i].m) - reconsts[i].alpha;
         }
 }
 
 voset::voset(domain *_d): d(_d)
 {
     h3 = d->delta * d->delta * d->delta;
+    celldims = {d->delta, d->delta, d->delta};
     old_ls = new double[d->n];
     on_interface = new bool[d->n];
     fullnesses = new fullness[d->n];
+    reconsts = new ireconst[d->n];
     redistancer = new fsm(d, on_interface, fullnesses);
 }
 
@@ -113,6 +116,7 @@ voset::~voset()
     delete[] old_ls;
     delete[] on_interface;
     delete[] fullnesses;
+    delete[] reconsts;
     delete redistancer;
 }
 

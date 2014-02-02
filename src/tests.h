@@ -177,6 +177,19 @@ void zalesak_disk_2d(domain *d)
                 (x.y > c.y - l.y / 2.0) &&
                 (x.y < c.y + l.y / 2.0)) d->vof[ix] = 0;
         }
+
+    //setting velocities
+    double pi=std::atan2(0, -1);
+    double pi_314 = pi / 314.0;
+    for (size_t j = 0; j < d->ndir[1]; ++j)
+        for (size_t i = 0; i < d->ndir[0]; ++i)
+        {
+            size_t ix = d->cellnos[d->idx(i, j, 0)];
+            vector x {d->delta *i + h_2, d->delta *j + h_2, 0}; // interface u is a half cell staggered
+
+            d->uf[0][ix] = pi_314 * (50. - x.y);
+            d->uf[1][ix] = pi_314 * (x.x - 50.);
+        }
 }
 
 }
