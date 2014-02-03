@@ -23,7 +23,6 @@ enum class fullness
 
 class voset
 {
-    fsm *redistancing;
     domain *d;
     double *old_ls;
     double h3;

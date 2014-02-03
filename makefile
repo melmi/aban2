@@ -5,7 +5,8 @@ BINDIR = bin
 OUTDIR = out
 
 CXX      = g++
-CXXFLAGS = -O3 -std=c++11
+# CXXFLAGS = -O3 -std=c++11
+CXXFLAGS = -g -O3 -std=c++11
 LDFLAGS  = -ljsoncpp -Xlinker -zmuldefs
 
 TARGET = $(BINDIR)/aban2

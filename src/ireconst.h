@@ -22,7 +22,7 @@ namespace aban2
 {
 class ireconst
 {
-private:
+public:
     typedef double(ireconst::*vol_func_t)(double x);
 
     double get_volume_3d(double _alpha);
