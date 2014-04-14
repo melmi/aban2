@@ -66,7 +66,9 @@ double ireconst::get_volume_1d(double _alpha)
 void ireconst::init(vector _c, vector _m)
 {
     c = _c;
+    orig_m = _m;
     m = {std::abs(_m.x), std::abs(_m.y), std::abs(_m.z)};
+    if (m.l2() < epsilon)m.x = 1;
     alpha_max = m * c;
 
     base_vol = 1;
@@ -105,8 +107,11 @@ void ireconst::set_volume()
     volume = (this->*vol_func)(alpha);
 }
 
-double ireconst::get_flux(size_t dir, double delta, bool from_start)
+ireconst ireconst::get_remaining(size_t dir, double delta)
 {
+    bool from_start = delta * orig_m.components[dir] < 0.0;
+    delta = std::abs(delta);
+
     vector new_c = c;
     new_c.components[dir] -= delta;
 
@@ -116,14 +121,14 @@ double ireconst::get_flux(size_t dir, double delta, bool from_start)
     else
         new_alpha = alpha;
 
-    ireconst i2 = ireconst::from_alpha(new_c, m, new_alpha);
-    return volume - i2.volume;
+    return ireconst::from_alpha(new_c, m, new_alpha);
 }
 
-double ireconst::get_flux(size_t dir, double delta, vector orig_m)
+void ireconst::split(size_t dir, double delta, vector orig_m, ireconst &remaining, ireconst &departing)
 {
-    bool from_start = delta * orig_m.components[dir] < 0.0;
-    return get_flux(dir, std::abs(delta), from_start);
+    remaining = get_remaining(dir, delta, orig_m);
+    delta = std::copysign(c.components[dir] - std::abs(delta), -delta);
+    departing = get_remaining(dir, delta, orig_m);
 }
 
 ireconst ireconst::from_volume(vector c, vector m, double volume)
@@ -141,6 +146,24 @@ ireconst ireconst::from_alpha(vector c, vector m, double alpha)
     result.init(c, m);
     result.alpha = alpha;
     result.set_volume();
+    return result;
+}
+
+ireconst ireconst::from_full  (vector c, vector m)
+{
+    ireconst result;
+    result.init(c, m);
+    result.alpha = result.alpha_max;
+    result.volume = c.x * c.y * c.z;
+    return result;
+}
+
+ireconst ireconst::from_empty (vector c, vector m)
+{
+    ireconst result;
+    result.init(c, m);
+    result.alpha = 0;
+    result.volume = 0;
     return result;
 }
 }

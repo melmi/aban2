@@ -201,7 +201,7 @@ void square_2d(domain *d)
 
     //square
     double eps = 1e-4;
-    vector c {50, 70, 0}, l {10 + eps, 10 + eps, 0};
+    vector c {50, 70, 0}, l {20 + eps, 20 + eps, 0};
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {

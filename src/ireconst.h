@@ -30,15 +30,16 @@ public:
     double get_volume_1d(double _alpha);
 
     void init(vector _c, vector _m);
-    double get_flux(size_t dir, double delta, bool from_start);
 
     void set_volume(); //sets volume assuming c, m and alpha  are known
     void set_alpha();  //sets alpha  assuming c, m and volume are known
+    ireconst get_remaining(size_t dir, double delta);
 
     double alpha_max;
     double base_vol;
     static vol_func_t vol_funcs[];
     vol_func_t vol_func;
+    vector orig_m;
 public:
     constexpr static const double epsilon = 1e-7;
 
@@ -47,8 +48,10 @@ public:
     double alpha; // distance of freesurface from the most far corner of cell which is inside
     double volume;
 
-    double get_flux(size_t dir, double delta, vector orig_m);
+    void split(size_t dir, double delta, ireconst &remaining, ireconst &departing);
 
+    static ireconst from_full  (vector c, vector m);
+    static ireconst from_empty (vector c, vector m);
     static ireconst from_volume(vector c, vector m, double volume);
     static ireconst from_alpha (vector c, vector m, double alpha );
 };

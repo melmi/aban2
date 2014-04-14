@@ -11,8 +11,11 @@ namespace aban2
 double vof::get_vof_flux(mesh_row *row, size_t i, double udt)
 {
     size_t no = d->cellno(row, i);
-    if (vos->fullnesses[no] != fullness::half)return std::abs(udt) * d->vof[no];
-    return vos->reconsts[no].get_flux(row->dir, udt, vector::from_data(d->nb, no));
+    // if (vos->fullnesses[no] != fullness::half)return std::abs(udt) * d->vof[no];
+    auto remaining = vos->reconsts[no].get_remaining(row->dir, udt, vector::from_data(d->nb, no));
+    auto result = vos->reconsts[no].volume - remaining.volume;
+    vos->reconsts[no] = remaining;
+    return result;
 }
 
 void vof::advect_row(mesh_row *row)
@@ -24,16 +27,17 @@ void vof::advect_row(mesh_row *row)
 
     for (size_t face = 0; face < row->n - 1; ++face)
     {
-        size_t i = face, ii = face + 1;
-        double udt = uf[i] * d->dt;
+        double udt = uf[face] * d->dt;
+        size_t from, to;
+        if (udt > 0)to = (from = face) + 1; else from = (to = face) + 1;
 
-        if (udt > 0)
-            flux_vof = get_vof_flux(row, i, udt);
-        else
-            flux_vof = -get_vof_flux(row, ii, udt);
+        flux_vof = get_vof_flux(row, from, udt);
 
-        row_mass[i ] -= flux_vof;
-        row_mass[ii] += flux_vof;
+        // if (row_mass[from] - flux_vof < 0)flux_vof = h3 - row_mass[from];
+        // if (row_mass[to] + flux_vof > h3)flux_vof = h3 - row_mass[to];
+
+        row_mass[from] -= flux_vof;
+        row_mass[to] += flux_vof;
     }
 
     // auto startbc = d->boundaries[row->start_code];
@@ -43,7 +47,7 @@ void vof::advect_row(mesh_row *row)
     //     startbc->face_val(&bcondition::q, d->q[row->dir], row, bcside::start, row->dir) / d->_rho;
     // double uf_end   =
     //     endbc  ->face_val(&bcondition::q, d->q[row->dir], row, bcside::end  , row->dir) / d->_rho;
-   
+
     // row_mass[0         ] +=
     //     startbc->face_val(&bcondition::vof, d->vof, row, bcside::start, row->dir) * uf_start * d->dt;
     // row_mass[row->n - 1] -=
@@ -68,18 +72,41 @@ vof::~vof()
     delete[] vof_mass;
 }
 
+void vof::reconstruct_full_and_empty_cells()
+{
+    vector c {d->delta, d->delta, d->delta};
+    // vector dummy_n {1, 0, 0};
+    for (size_t i = 0; i < d->n; ++i)
+        if (!vos->on_interface[i])
+            if (vos->fullnesses[i] == fullness::full)
+                vos->reconsts[i] = ireconst::from_full(c, vector::from_data(d->nb, i));
+            else if (vos->fullnesses[i] == fullness::empty)
+                vos->reconsts[i] = ireconst::from_empty(c, vector::from_data(d->nb, i));
+}
+
 void vof::advect()
 {
     for (size_t i = 0; i < d->n; ++i) vof_mass[i] = d->vof[i] * h3;
 
     vos->make_ls();
+    reconstruct_full_and_empty_cells();
+    xfirst = !xfirst;
 
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-            advect_row(row);
-        }
+    if (xfirst)
+        for (size_t dir = 0; dir < NDIRS; ++dir)
+            for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+            {
+                mesh_row *row = d->rows[dir] + irow;
+                advect_row(row);
+            }
+    else
+        for (int dir = NDIRS - 1; dir > -1; --dir)
+            for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+            {
+                mesh_row *row = d->rows[dir] + irow;
+                advect_row(row);
+            }
+    vos->make_ls();
 
     for (size_t i = 0; i < d->n; ++i) d->vof[i] = vof_mass[i] / h3;
 }

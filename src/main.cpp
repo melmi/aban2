@@ -24,11 +24,39 @@ string to_string (T number)
     return ss.str();
 }
 
+void check_continuety(domain *d)
+{
+    double *div = new double[d->n];
+    std::fill_n(div, d->n, 0);
+
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+        for (size_t irow = 1; irow < d->nrows[dir] - 1; ++irow)
+        {
+            mesh_row *row = d->rows[dir] + irow;
+            for (size_t i = 1; i < row->n - 1; ++i)
+            {
+                double *u = d->extract_scalars(row, d->uf[row->dir]);
+
+                size_t no = d->cellno(row, i);
+                div[no] = u[i] - u[i - 1];
+
+                delete[] u;
+            }
+        }
+
+    std::for_each(div, div + d->n, [](double & x)
+    {
+        x = std::abs(x);
+    });
+    cout << "divergance: " << std::accumulate(div, div + d->n, 0) << std::endl;
+}
+
 int main(int argc, char const *argv[])
 {
     cout << "Reading mesh" << endl;
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
     square_2d(d);
+    check_continuety(d);
     vof vofc(d);
     d->write_vtk("out/test0.vtk");
     for (int i = 0; i < 628 / d->dt; ++i)
@@ -37,42 +65,12 @@ int main(int argc, char const *argv[])
         vofc.advect();
         d->write_vtk("out/test" + to_string(i + 1) + ".vtk");
     }
+    // d->write_vtk("out/test1.vtk");
     cout << "done" << endl;
 
     // solver s(d, "out/out");
     // s.step();
     // s.run(10);
-
-    // cout << endl;
-    // aban2::vector n {1, 1, 0};
-    // n.normalize();
-    // ireconst aa = ireconst::from_alpha({0, 1, 1}, n, 1.414);
-    // cout << aa.alpha_max << endl;
-    // cout << aa.volume << endl;
-
-    // cout << endl;
-    // ireconst a = ireconst::from_volume({3, 1, 1}, n, 1.5);
-    // cout << "alpha: " << a.alpha << endl;
-    // cout << "n: " << n.x << ", " << n.y << ", " << n.z << endl;
-    // cout << endl;
-    // cout << a.get_flux(0, 1, n) << endl;
-    // cout << a.get_flux(0, 2, n) << endl;
-    // cout << a.get_flux(0, 3, n) << endl;
-    // cout << endl;
-    // cout << a.get_flux(0, -1, n) << endl;
-    // cout << a.get_flux(0, -2, n) << endl;
-    // cout << a.get_flux(0, -3, n) << endl;
-
-    // ireconst a;
-    // a = ireconst::from_volume({1, 1, 1}, n, 0.00); cout << a.alpha << endl;
-    // a = ireconst::from_volume({1, 1, 1}, n, 0.25); cout << a.alpha << endl;
-    // a = ireconst::from_volume({1, 1, 1}, n, 0.50); cout << a.alpha << endl;
-    // a = ireconst::from_volume({1, 1, 1}, n, 1.00); cout << a.alpha << endl;
-    // cout << endl;
-    // a = ireconst::from_alpha({1, 1, 1}, n, 1.414 * 0.00); cout << a.volume << endl;
-    // a = ireconst::from_alpha({1, 1, 1}, n, 1.414 * 0.25); cout << a.volume << endl;
-    // a = ireconst::from_alpha({1, 1, 1}, n, 1.414 * 0.50); cout << a.volume << endl;
-    // a = ireconst::from_alpha({1, 1, 1}, n, 1.414 * 1.00); cout << a.volume << endl;
 
     return 0;
 }

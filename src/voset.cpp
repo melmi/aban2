@@ -10,8 +10,6 @@ namespace aban2
 {
 void voset::detect_on_interface_cells()
 {
-    std::fill_n(on_interface, d->n, false);
-
     //calculating fullnesses
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
