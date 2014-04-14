@@ -1,0 +1,23 @@
+Aban 2 To-Do List:
+
+  Fress Surface:
+    ☐ Calculate interface normals using Waymouth and Yue (2010)
+    ☐ Update advection of the volume fraction to use the method of Waymouth and Yue (2010)
+    ☐ implement the interface rho*u advection
+
+  Flow Solver:
+    ☐ Update the code to use u again (instead of q)
+    ☐ Update the code to use variable density
+    ☐ Use a vector as delta
+
+  Software:
+    ☐ Organize boundary conditions for a better parameter passing to functions
+      It might be by using std::bind struct.
+    ☐ Accelerate the code by using the restrict keyword
+
+  Documentation:
+    ☐ Write down the mim method as described by the reference of Ham's paper
+    ☐ Discuss energy conservation error
+      Mention the work of Felten and Lund and show that the error of kinetic energy conservations vanishs to zero if one uses mim as above with an equi-distance surface.
+    ☐ Write down overall method
+    ☐ Check if there is anyway to use pagedown instead of mdwiki
