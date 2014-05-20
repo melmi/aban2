@@ -23,9 +23,9 @@ class advection
 public:
     advection(domain *_d): d(_d) {}
 
-    void advect(mesh_row *row, double *phi, bcondition::func bcfunc, size_t cmpnt);
+    void advect(mesh_row *row, double *phi, double *grad_dir, flowbc::member bc);
 
-    void advect_qstar();
+    void advect_ustar();
 };
 
 }

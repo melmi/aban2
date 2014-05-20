@@ -19,15 +19,10 @@
 namespace aban2
 {
 
-enum class vardim
-{
-    scalar, vector
-};
-
 struct varinfo
 {
     std::string name;
-    vardim dim;
+    char rank;
     bool show;
     union
     {
@@ -36,20 +31,19 @@ struct varinfo
         double ** *vec;
     } data;
 
-    varinfo(std::string _name, vardim _dim, bool _show, void *_data);
+    varinfo(std::string _name, char _rank, bool _show, void *_data);
 };
 
 class domain: public mesh
 {
 public:
-    double **uf, *p, *ls;
-    double **q, * *qstar;
+    double **uf, * *u, * *ustar, *p, *ls;
     double *vof, *smooth_vof, * *nb;
-    double dt, tend, _rho, _mu;
+    double dt, tend, _rho, _nu;
     double t;
     vector g;
-    int step_write;
-    bcondition **boundaries;
+    int write_interval;
+    flowbc **boundaries;
     std::list<varinfo> varlist;
 
     static domain *create_from_file(std::string file_name);
@@ -70,9 +64,9 @@ public:
 
     size_t *get_row_idxs(mesh_row *row);
 
-    void *create_var(size_t dim);
+    void *create_var(size_t rank);
 
-    void delete_var(size_t dim, void *v);
+    void delete_var(size_t rank, void *v);
 
 private:
     void create_vars();

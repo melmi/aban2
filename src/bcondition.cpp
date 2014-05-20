@@ -13,95 +13,127 @@
 namespace aban2
 {
 
+//////////////////////////  bcdesc
+
+double bcdesc::face_val(double phi_P, double dx)
+{
+    return sw * (phi_P + dx * grad) + cte;
+}
+
 //////////////////////////  bcondition
 
-void bcondition::create_bcs(Json::Value *bcroot, bcondition **boundaries, domain *_d)
+
+double bcondition::face_val(size_t cellno, size_t dir, double *phi, double dx)
+{
+    return desc(cellno, dir).face_val(phi[cellno], dx);
+}
+
+//////////////////////////  dirichlet
+
+class dirichlet: public bcondition
+{
+    double value;
+public:
+    virtual bcdesc desc(size_t cellno, size_t dir)
+    {
+        return {0, 0, value};
+    }
+    dirichlet(domain *_d, double _value): bcondition(_d), value(_value) {}
+};
+
+//////////////////////////  neumann
+
+class neumann: public bcondition
+{
+    double value;
+public:
+    virtual bcdesc desc(size_t cellno, size_t dir)
+    {
+        return {1, value, 0};
+    }
+    neumann(domain *_d, double _value): bcondition(_d), value(_value) {}
+};
+
+//////////////////////////  pressure_of_const_velocity
+
+class pressure_of_const_velocity: public bcondition
+{
+public:
+    vector u_bc;
+    virtual bcdesc desc(size_t cellno, size_t dir)
+    {
+        return
+        {
+            1,
+            - (u_bc - vector::from_data(d->ustar, cellno)).components[dir] / d->dt,
+            0
+        };
+    }
+    pressure_of_const_velocity(domain *_d, vector _u_bc): bcondition(_d), u_bc(_u_bc) {}
+};
+
+//////////////////////////  flow_bcondition
+
+flowbc::member flowbc::umembers[3] {&flowbc::u0, &flowbc::u1, &flowbc::u2};
+
+void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
 {
     auto bnames = bcroot->getMemberNames();
-    for (auto &x : bnames)
+    for (auto &bname : bnames)
     {
-        Json::Value bc = (*bcroot)[x];
-        if (bc["type"].asString() == "q")
-            boundaries[x[0]] = new qbc(&bc, _d);
-        if (bc["type"].asString() == "p")
-            boundaries[x[0]] = new pbc(&bc, _d);
+        Json::Value bc_node = (*bcroot)[bname];
+        Json::Value bcval = bc_node["value"];
+        flowbc *bc;
+
+        if (bc_node["type"].asString() == "p")
+        {
+            bc = new flowbc
+            {
+                new neumann(_d, 0),
+                new neumann(_d, 0),
+                new neumann(_d, 0),
+                new dirichlet(_d, bcval.asDouble()),
+                new neumann(_d, 0)
+            };
+        }
+        if (bc_node["type"].asString() == "u")
+        {
+            vector u {bcval[0].asDouble(), bcval[1].asDouble(), bcval[2].asDouble()};
+            bc = new flowbc
+            {
+                new dirichlet(_d, u.x),
+                new dirichlet(_d, u.y),
+                new dirichlet(_d, u.z),
+                new pressure_of_const_velocity(_d, u),
+                new neumann(_d, 0)
+            };
+        }
+
+        bc_node[bname[0]] = bc;
     }
 }
 
-double bcondition::face_val(bcondition::func f, double *phi, mesh_row *row, bcside side, size_t cmpnt)
+flowbc::~flowbc()
 {
-    bcdesc desc = (this->*f)(row, side, cmpnt);
-    double dx = side == bcside::start ? -d->delta / 2.0 : d->delta / 2.0;
-    return desc.sw * (phi[desc.cellno] + dx * desc.grad) + desc.cte;
+    delete p;
+    delete u0;
+    delete u1;
+    delete u2;
+    delete vof;
 }
 
-double bcondition::row_face_val(bcondition::func f, double *phi, mesh_row *row, bcside side, size_t cmpnt)
+double flowbc::fval_start(domain *d, mesh_row *row, double *phi, flowbc::member bcmember)
 {
-    bcdesc desc = (this->*f)(row, side, cmpnt);
-    double dx = side == bcside::start ? -d->delta / 2.0 : d->delta / 2.0;
-    double val = side == bcside::start ? phi[0] : phi[row->n - 1];
-    return desc.sw * (val + dx * desc.grad) + desc.cte;
+    auto bc = d->boundaries[row->start_code]->*bcmember;
+    auto cellno = d->cellno(row, 0);
+    return bc->face_val(cellno, row->dir, phi, -d->delta / 2);
 }
 
-//////////////////////////  qbc
-
-bcdesc qbc::p(mesh_row *r, bcside side, size_t cmpnt)
+double flowbc::fval_end  (domain *d, mesh_row *row, double *phi, flowbc::member bcmember)
 {
-    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return
-    {
-        cellno,
-        1,
-        - (value - vector::from_data(d->qstar, cellno)).components[r->dir] / d->dt,
-        0
-    };
-}
-
-bcdesc qbc::q(mesh_row *r, bcside side, size_t cmpnt)
-{
-    // Althought cellno is not used for calculating q at boundary
-    // we need it to obtain rho and thus ustar, there.
-    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return {cellno, 0, 0, value.components[cmpnt]};
-}
-
-bcdesc qbc::vof(mesh_row *r, bcside side, size_t cmpnt)
-{
-    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return {cellno, 1, 0, 0};
-}
-
-qbc::qbc(Json::Value *bcdata, domain *_d): bcondition(_d)
-{
-    Json::Value bcval = (*bcdata)["value"];
-    value.components[0] = bcval[0].asDouble();
-    value.components[1] = bcval[1].asDouble();
-    value.components[2] = bcval[2].asDouble();
-}
-
-//////////////////////////  pbc
-
-bcdesc pbc::p(mesh_row *r, bcside side, size_t cmpnt)
-{
-    return {0, 0, 0, value};
-}
-
-bcdesc pbc::q(mesh_row *r, bcside side, size_t cmpnt)
-{
-    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return {cellno, 1, 0, 0};
-}
-
-bcdesc pbc::vof(mesh_row *r, bcside side, size_t cmpnt)
-{
-    size_t cellno = side == bcside::start ? d->cellno(r, 0) : d->cellno(r, r->n - 1);
-    return {cellno, 1, 0, 0};
-}
-
-pbc::pbc(Json::Value *bcdata, domain *_d): bcondition(_d)
-{
-    Json::Value bcval = (*bcdata)["value"];
-    value = bcval.asDouble();
+    auto bc = d->boundaries[row->end_code]->*bcmember;
+    auto cellno = d->cellno(row, row->n - 1);
+    return bc->face_val(cellno, row->dir, phi, +d->delta / 2);
 }
 
 }

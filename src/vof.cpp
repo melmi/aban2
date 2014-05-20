@@ -12,7 +12,7 @@ double vof::get_vof_flux(mesh_row *row, size_t i, double udt)
 {
     size_t no = d->cellno(row, i);
     // if (vos->fullnesses[no] != fullness::half)return std::abs(udt) * d->vof[no];
-    auto remaining = vos->reconsts[no].get_remaining(row->dir, udt, vector::from_data(d->nb, no));
+    auto remaining = vos->reconsts[no].get_remaining(row->dir, udt);
     auto result = vos->reconsts[no].volume - remaining.volume;
     vos->reconsts[no] = remaining;
     return result;

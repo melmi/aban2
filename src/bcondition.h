@@ -17,62 +17,49 @@ namespace aban2
 class domain;
 class mesh_row;
 
-enum class bcside
-{
-    start, end
-};
-
 struct bcdesc
 {
     // phi_f = sw * (phi_P + (r_f-r_P) * grad) + cte
     // sw should be 0 or 1
-    size_t cellno;
     double sw, grad, cte;
+    double face_val(double phi_P, double dx);
 };
 
 class bcondition
 {
-public:
-    typedef bcdesc(bcondition::*func)(mesh_row *, bcside, size_t);
-
-    static void create_bcs(Json::Value *bcroot, bcondition **boundaries, domain *_d);
-
-    double face_val(func f, double *phi, mesh_row *row, bcside side, size_t cmpnt);
-    double row_face_val(func f, double *phi, mesh_row *row, bcside side, size_t cmpnt);
-
+protected:
     domain *d;
-
-    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt) = 0;
-    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt) = 0;
-    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt) = 0;
-
+    double face_val(size_t cellno, size_t dir, double *phi, double dx);
+public:
+    virtual bcdesc desc(size_t cellno, size_t dir) = 0;
     bcondition(domain *_d): d(_d) {}
+
+    friend class flowbc;
 };
 
-class qbc: public bcondition
+class flowbc
 {
 public:
-    vector value;
+    typedef bcondition *flowbc::*member;
 
-    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
+    union
+    {
+        struct
+        {
+            bcondition *u0, *u1, *u2;
+        };
+        bcondition *u[3];
+    };
+    bcondition *p, *vof;
+    static member umembers[3];
 
-    qbc(Json::Value *bcdata, domain *_d);
-};
+    static void create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d);
+    flowbc(bcondition *_u0, bcondition *_u1, bcondition *_u2, bcondition *_p, bcondition *_vof)
+        : u0(_u0), u1(_u1), u2(_u2), p(_p), vof(_vof) {}
+    ~flowbc();
 
-class pbc: public bcondition
-{
-public:
-    pbc(domain *_d): bcondition(_d) {}
-
-    double value;
-
-    virtual bcdesc p(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc q(mesh_row *r, bcside side, size_t cmpnt);
-    virtual bcdesc vof(mesh_row *r, bcside side, size_t cmpnt);
-
-    pbc(Json::Value *bcdata, domain *_d);
+    static double fval_start(domain *d, mesh_row *row, double *phi, member bcmember);
+    static double fval_end  (domain *d, mesh_row *row, double *phi, member bcmember);
 };
 
 }

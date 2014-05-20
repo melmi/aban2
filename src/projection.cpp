@@ -38,8 +38,8 @@ void projection::add_row(mesh_row *row)
 {
     size_t n = row->n;
     size_t *row_idxs = d->get_row_idxs(row);
-    auto start_bc_desc = d->boundaries[row->start_code]->p(row, bcside::start, 0);
-    auto end_bc_desc   = d->boundaries[row->end_code  ]->p(row, bcside::end  , 0);
+    auto desc_start = d->boundaries[row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
+    auto desc_end   = d->boundaries[row->end_code  ]->p->desc(d->cellno(row, row->n - 1), row->dir);
 
     for (size_t i = 1; i < n - 1; ++i)
     {
@@ -49,8 +49,8 @@ void projection::add_row(mesh_row *row)
         pmatrix.AddInteraction(ix, row_idxs[i + 1], +1.0 * h2inv);
     }
 
-    apply_row_bc(row_idxs[0    ], row_idxs[1    ], start_bc_desc);
-    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], end_bc_desc  );
+    apply_row_bc(row_idxs[0    ], row_idxs[1    ], desc_start);
+    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], desc_end  );
 
     delete[] row_idxs;
 }
@@ -63,8 +63,7 @@ void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
 
 double *projection::get_rhs()
 {
-    double *rhs = (double *)d->create_var(1);
-    gradient::divergance(d, d->qstar, rhs, &bcondition::q);
+    auto rhs = gradient::divergance(d, d->ustar, flowbc::umembers);
     for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
@@ -77,16 +76,15 @@ void projection::apply_rhs_bc(double *rhs)
         {
             mesh_row *row = d->rows[dir] + irow;
 
-            apply_single_rhs_bc(row, rhs, bcside::start);
-            apply_single_rhs_bc(row, rhs, bcside::end);
-        }
-}
+            size_t cellno_start = d->cellno(row, 0);
+            size_t cellno_end   = d->cellno(row, row->n - 1);
 
-void projection::apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side)
-{
-    bcondition *bc = side == bcside::start ? d->boundaries[row->start_code] : d->boundaries[row->end_code];
-    auto desc = bc->p(row, side, row->dir);
-    rhs[desc.cellno] -= 2.0 * desc.cte * h2inv;
+            auto bcdesc_start = d->boundaries[row->start_code]->p->desc(cellno_start, row->dir);
+            auto bcdesc_end   = d->boundaries[row->end_code  ]->p->desc(cellno_end  , row->dir);
+
+            rhs[cellno_start] -= 2.0 * bcdesc_start.cte * h2inv;
+            rhs[cellno_end  ] -= 2.0 * bcdesc_end  .cte * h2inv;
+        }
 }
 
 void projection::solve_p()
@@ -113,14 +111,13 @@ void projection::solve_p()
     delete[] rhs;
 }
 
-void projection::update_q()
+void projection::update_u()
 {
-    double **gradp = (double **)d->create_var(2);
-    gradient::of_scalar(d, d->p, gradp, &bcondition::p);
+    double **gradp = gradient::of_scalar(d, d->p, &flowbc::p);
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->q[dir][i] = d->qstar[dir][i] - gradp[dir][i] * d->dt;
+            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt;
 
     d->delete_var(2, gradp);
 }
@@ -132,16 +129,16 @@ void projection::update_uf()
         {
             mesh_row *row = d->rows[idir] + irow;
 
-            double *qstar = d->extract_scalars(row, d->qstar[idir]);
+            double *ustar = d->extract_scalars(row, d->ustar[idir]);
             double *p = d->extract_scalars(row, d->p);
             double *uf = new double[row->n];
 
             for (size_t i = 0; i < row->n - 1; ++i)
-                uf[i] = (qstar[i] + qstar[i + 1]) / d->_rho / 2.0 - (p[i + 1] - p[i]) / d->delta / d->_rho;
+                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 - (p[i + 1] - p[i]) / d->delta;
 
             d->insert_scalars(row, d->uf[idir], uf);
 
-            delete[] qstar;
+            delete[] ustar;
             delete[] p;
             delete[] uf;
         }

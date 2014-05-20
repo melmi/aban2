@@ -10,8 +10,8 @@
 namespace aban2
 {
 
-varinfo::varinfo(std::string _name, vardim _dim, bool _show, void *_data):
-    name(_name), dim(_dim), show(_show)
+varinfo::varinfo(std::string _name, char _rank, bool _show, void *_data):
+    name(_name), rank(_rank), show(_show)
 {
     data.generic = _data;
 }
@@ -36,14 +36,14 @@ domain::domain(Json::Value *root): mesh(root)
     dt = root->get("dt", 1).asDouble();
     tend = root->get("tend", 1).asDouble();
     _rho = root->get("rho", 1000).asDouble();
-    _mu = root->get("mu", 1e-3).asDouble();
+    _nu = root->get("nu", 1e-3).asDouble();
     Json::Value gnode = (*root)["g"];
     g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
-    step_write = root->get("step_write", 1).asInt();
+    write_interval = root->get("write_interval", 1).asInt();
 
-    boundaries = new bcondition*[256];
+    boundaries = new flowbc*[256];
     Json::Value boundaries_val = (*root)["boundaries"];
-    bcondition::create_bcs(&boundaries_val, boundaries, this);
+    flowbc::create_bcs(&boundaries_val, boundaries, this);
 
     register_vars();
     create_vars();
@@ -51,16 +51,15 @@ domain::domain(Json::Value *root): mesh(root)
 
 void domain::register_vars()
 {
-    varlist.push_back(varinfo("vof", vardim::scalar, true, &vof));
-    varlist.push_back(varinfo("ls", vardim::scalar, true, &ls));
-    varlist.push_back(varinfo("smooth_vof", vardim::scalar, true, &smooth_vof));
-    varlist.push_back(varinfo("nb", vardim::vector, true, &nb));
+    varlist.push_back(varinfo("p", 1, true, &p));
+    varlist.push_back(varinfo("u", 2, true, &u));
+    varlist.push_back(varinfo("ustar", 2, false, &ustar));
+    varlist.push_back(varinfo("uf", 2, false, &uf));
 
-    varlist.push_back(varinfo("p", vardim::scalar, true, &p));
-    varlist.push_back(varinfo("uf", vardim::vector, false, &uf));
-
-    varlist.push_back(varinfo("q", vardim::vector, true, &q));
-    varlist.push_back(varinfo("qstar", vardim::vector, false, &qstar));
+    varlist.push_back(varinfo("vof", 1, true, &vof));
+    varlist.push_back(varinfo("ls", 1, true, &ls));
+    varlist.push_back(varinfo("smooth_vof", 1, true, &smooth_vof));
+    varlist.push_back(varinfo("nb", 2, true, &nb));
 }
 
 void domain::write_vtk(std::string file_name)
@@ -93,9 +92,9 @@ void domain::write_vtk(std::string file_name)
 
     for (auto & v : varlist)
         if (v.show)
-            switch (v.dim)
+            switch (v.rank)
             {
-            case vardim::scalar:
+            case 1:
                 file << "SCALARS " << v.name << " double" << std::endl;
                 file << "LOOKUP_TABLE default" << std::endl;
                 for (int k = 0; k < ndir[2]; ++k)
@@ -108,7 +107,7 @@ void domain::write_vtk(std::string file_name)
                             file <<  val << std::endl;
                         }
                 break;
-            case vardim::vector:
+            case 2:
                 file << "VECTORS " << v.name << " double" << std::endl;
                 for (int k = 0; k < ndir[2]; ++k)
                     for (int j = 0; j < ndir[1]; ++j)
@@ -166,9 +165,9 @@ size_t *domain::get_row_idxs(mesh_row *row)
     return row_idxs;
 }
 
-void *domain::create_var(size_t dim)
+void *domain::create_var(size_t rank)
 {
-    if (dim == 1)
+    if (rank == 1)
     {
         double *result = new double[n];
         std::fill_n(result, n, 0);
@@ -178,16 +177,16 @@ void *domain::create_var(size_t dim)
     {
         void **result = new void*[3];
         for (int i = 0; i < 3; ++i)
-            result[i] = create_var(dim - 1);
+            result[i] = create_var(rank - 1);
         return result;
     }
 }
 
-void domain::delete_var(size_t dim, void *v)
+void domain::delete_var(size_t rank, void *v)
 {
-    if (dim > 1)
+    if (rank > 1)
         for (int i = 0; i < 3; ++i)
-            delete_var(dim - 1, ((double **)v)[i]);
+            delete_var(rank - 1, ((double **)v)[i]);
     delete[] (double *)v;
 }
 
@@ -195,12 +194,12 @@ void domain::create_vars()
 {
     for (auto & v : varlist)
     {
-        switch (v.dim)
+        switch (v.rank)
         {
-        case vardim::scalar:
+        case 1:
             *v.data.scalar = (double *)create_var(1);
             break;
-        case vardim::vector:
+        case 2:
             *v.data.vec = (double **)create_var(2);
             break;
         }
@@ -211,12 +210,12 @@ void domain::delete_vars()
 {
     for (auto & v : varlist)
     {
-        switch (v.dim)
+        switch (v.rank)
         {
-        case vardim::scalar:
+        case 1:
             delete_var(1, *v.data.scalar);
             break;
-        case vardim::vector:
+        case 2:
             delete_var(2, *v.data.vec);
             break;
         }

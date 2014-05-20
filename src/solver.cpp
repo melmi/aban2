@@ -36,18 +36,18 @@ solver::~solver()
 void solver::step()
 {
     for (int i = 0; i < NDIRS; ++i)
-        std::copy_n(d->q[i], d->n, d->qstar[i]);
+        std::copy_n(d->u[i], d->n, d->ustar[i]);
 
     std::cout << "      advection " << std::endl;
-    advector->advect_qstar();
+    advector->advect_ustar();
     std::cout << "      diffusion " << std::endl;
-    diffusor->diffuse_qstar();
+    diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
     apply_source_terms();
     std::cout << "      pressure " << std::endl;
     projector->solve_p();
     std::cout << "      updating " << std::endl;
-    projector->update_q();
+    projector->update_u();
     projector->update_uf();
 
     d->t += d->dt;
@@ -65,8 +65,8 @@ void solver::run(double tend)
                   << std::endl << std::flush;
         step();
 
-        if ((it + 1) % d->step_write == 0)
-            write_step((it + 1) / d->step_write);
+        if ((it + 1) % d->write_interval == 0)
+            write_step((it + 1) / d->write_interval);
     }
 }
 
@@ -74,9 +74,9 @@ void solver::apply_source_terms()
 {
     for (size_t i = 0; i < d->n; ++i)
     {
-        d->qstar[0][i] += d->g.components[0] * d->_rho * d->dt;
-        d->qstar[1][i] += d->g.components[1] * d->_rho * d->dt;
-        d->qstar[2][i] += d->g.components[2] * d->_rho * d->dt;
+        d->ustar[0][i] += d->g.components[0] * d->dt;
+        d->ustar[1][i] += d->g.components[1] * d->dt;
+        d->ustar[2][i] += d->g.components[2] * d->dt;
     }
 }
 

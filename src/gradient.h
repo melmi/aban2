@@ -18,15 +18,15 @@ namespace aban2
 class gradient
 {
 public:
-    static void add_1d_row(domain *d, mesh_row *row, double *phi, double *grad, bcondition::func bcfunc, size_t cmpnt);
+    static void add_1d_row(domain *d, mesh_row *row, double *phi, double *grad_dir, flowbc::member bc);
 
-    static double *get_1d_row(domain *d, mesh_row *row, double *phi, bcondition::func bcfunc, size_t cmpnt);
+    static double *of_scalar_dir_oriented(domain *d, double *phi, flowbc::member bc, size_t dir);
 
-    static void of_scalar(domain *d, double *phi, double **grad, bcondition::func bcfunc);
+    static double **of_scalar(domain *d, double *phi, flowbc::member bc);
 
-    static void of_vec(domain *d, double **phi, double ***grad, bcondition::func bcfunc);
+    static double ** *of_vec(domain *d, double **phi, flowbc::member bc[3]);
 
-    static void divergance(domain *d, double **phi, double *divergance, bcondition::func bcfunc);
+    static double *divergance(domain *d, double **phi, flowbc::member bc[3]);
 };
 
 }

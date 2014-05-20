@@ -124,11 +124,11 @@ ireconst ireconst::get_remaining(size_t dir, double delta)
     return ireconst::from_alpha(new_c, m, new_alpha);
 }
 
-void ireconst::split(size_t dir, double delta, vector orig_m, ireconst &remaining, ireconst &departing)
+void ireconst::split(size_t dir, double delta, ireconst &remaining, ireconst &departing)
 {
-    remaining = get_remaining(dir, delta, orig_m);
+    remaining = get_remaining(dir, delta);
     delta = std::copysign(c.components[dir] - std::abs(delta), -delta);
-    departing = get_remaining(dir, delta, orig_m);
+    departing = get_remaining(dir, delta);
 }
 
 ireconst ireconst::from_volume(vector c, vector m, double volume)

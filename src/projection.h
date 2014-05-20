@@ -37,11 +37,10 @@ private:
 
     double *get_rhs();
     void apply_rhs_bc(double *rhs);
-    void apply_single_rhs_bc(mesh_row *row, double *rhs, bcside side);
 
 public:
     void solve_p();
-    void update_q();
+    void update_u();
     void update_uf();
 };
 

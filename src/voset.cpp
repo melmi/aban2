@@ -65,16 +65,8 @@ double voset::err()
 
 double voset::calculate_normals(double *phi)
 {
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-            double *line = d->extract_scalars(row, phi);
-            double *grad = gradient::get_1d_row(d, row, line, &bcondition::vof, dir);
-            d->insert_scalars(row, d->nb[dir], grad);
-            delete[] line;
-            delete[] grad;
-        }
+    d->delete_var(2, d->nb);
+    d->nb = gradient::of_scalar(d, phi, &flowbc::vof);
 
     for (size_t i = 0; i < d->n; ++i)
     {
