@@ -48,6 +48,7 @@ void solver::step()
     projector->solve_p();
     std::cout << "      updating " << std::endl;
     projector->update_u();
+    std::cout << "      calculating uf " << std::endl;
     projector->update_uf();
 
     d->t += d->dt;

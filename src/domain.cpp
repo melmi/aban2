@@ -90,7 +90,7 @@ void domain::write_vtk(std::string file_name)
             for (int i = 0; i < ndir[0]; ++i)
                 file << (exists(i, j, k) ? 1 : 0) << std::endl;
 
-    for (auto & v : varlist)
+    for (auto &v : varlist)
         if (v.show)
             switch (v.rank)
             {
@@ -175,7 +175,7 @@ void *domain::create_var(size_t rank)
     }
     else
     {
-        void **result = new void*[3];
+        void **result = new void *[3];
         for (int i = 0; i < 3; ++i)
             result[i] = create_var(rank - 1);
         return result;
@@ -187,12 +187,12 @@ void domain::delete_var(size_t rank, void *v)
     if (rank > 1)
         for (int i = 0; i < 3; ++i)
             delete_var(rank - 1, ((double **)v)[i]);
-    delete[] (double *)v;
+    if (v != nullptr) delete[] (double *)v;
 }
 
 void domain::create_vars()
 {
-    for (auto & v : varlist)
+    for (auto &v : varlist)
     {
         switch (v.rank)
         {
@@ -208,7 +208,7 @@ void domain::create_vars()
 
 void domain::delete_vars()
 {
-    for (auto & v : varlist)
+    for (auto &v : varlist)
     {
         switch (v.rank)
         {

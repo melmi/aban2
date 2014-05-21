@@ -117,7 +117,7 @@ void projection::update_u()
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt;
+            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt * d->_rho;
 
     d->delete_var(2, gradp);
 }

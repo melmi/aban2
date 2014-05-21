@@ -44,6 +44,7 @@ double *gradient::of_scalar_dir_oriented(domain *d, double *phi, flowbc::member 
 double **gradient::of_scalar(domain *d, double *phi, flowbc::member bc)
 {
     double **result = new double*[3];
+    result[2] = nullptr;
     for (size_t dir = 0; dir < NDIRS; ++dir)
         result[dir] = of_scalar_dir_oriented(d, phi, bc, dir);
     return result;
