@@ -82,23 +82,24 @@ void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
     for (auto &bname : bnames)
     {
         Json::Value bc_node = (*bcroot)[bname];
-        Json::Value bcval = bc_node["value"];
+        Json::Value bc_type = bc_node["type"].asString();
+        Json::Value bc_val = bc_node["value"];
         flowbc *bc;
 
-        if (bc_node["type"].asString() == "p")
+        if (bc_type == "p")
         {
             bc = new flowbc
             {
                 new neumann(_d, 0),
                 new neumann(_d, 0),
                 new neumann(_d, 0),
-                new dirichlet(_d, bcval.asDouble()),
+                new dirichlet(_d, bc_val.asDouble()),
                 new neumann(_d, 0)
             };
         }
-        if (bc_node["type"].asString() == "u")
+        if (bc_type == "u")
         {
-            vector u {bcval[0].asDouble(), bcval[1].asDouble(), bcval[2].asDouble()};
+            vector u {bc_val[0].asDouble(), bc_val[1].asDouble(), bc_val[2].asDouble()};
             bc = new flowbc
             {
                 new dirichlet(_d, u.x),
@@ -109,7 +110,7 @@ void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
             };
         }
 
-        bc_node[bname[0]] = bc;
+        boundaries[bname[0]] = bc;
     }
 }
 
