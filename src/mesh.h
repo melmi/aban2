@@ -48,8 +48,6 @@ public:
     {
         return k * ndir[1] + j * ndir[0] + i;
     }
-
-
     inline size_t cellno(mesh_row *r, size_t i)
     {
         r->start[r->dir] += i;
@@ -57,21 +55,15 @@ public:
         r->start[r->dir] -= i;
         return result;
     }
-
     bool exists(size_t i, size_t j, size_t k);
     bool exists(size_t i, size_t j, size_t k, size_t &no);
     bool exists_and_inside(size_t i, size_t j, size_t k, size_t &no);
 
 private:
-
     inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk);
-
     inline void get_dirs(size_t dir, size_t &ii, size_t &jj, size_t &kk);
-
     void generate_rows(size_t dir);
-
     void set_cell_nos();
-
     void init();
 
 public:

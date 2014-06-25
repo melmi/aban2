@@ -17,7 +17,7 @@ struct vector
 {
     union
     {
-        double components[3];
+        double cmpnt[3];
         struct
         {
             double x, y, z;
@@ -25,20 +25,28 @@ struct vector
     };
 
     vector();
-
     vector(double _x, double _y, double _z);
+    vector(double c): vector(c, c, c) {}
 
-    double operator*(vector v);
-    vector operator+(vector v);
-    vector operator-(vector v);
+    vector operator*(double r) const;
+    double operator*(vector v) const;
+    vector operator+(vector v) const;
+    vector operator-(vector v) const;
+    vector operator-() const;
+    vector &operator*=(const double r);
+    vector &operator+=(const vector v);
+    vector &operator-=(const vector v);
 
-    double l2();
-    double l();
+    double l2() const;
+    double l() const;
     void normalize();
     void normalize(double epsilon);
 
+    void to_data(double **data, size_t i) const;
     static vector from_data(double **data, size_t i);
 };
+
+vector operator*(const double r, const vector v);
 
 }
 

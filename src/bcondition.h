@@ -29,10 +29,10 @@ class bcondition
 {
 protected:
     domain *d;
-    double face_val(size_t cellno, size_t dir, double *phi, double dx);
 public:
-    virtual bcdesc desc(size_t cellno, size_t dir) = 0;
     bcondition(domain *_d): d(_d) {}
+    virtual bcdesc desc(size_t cellno, size_t dir) = 0;
+    double face_val(size_t cellno, size_t dir, double *phi, double dx);
 
     friend class flowbc;
 };

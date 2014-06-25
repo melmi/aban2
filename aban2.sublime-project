@@ -6,5 +6,17 @@
 			"path": ".",
 			"folder_exclude_patterns": ["out","bin"]
 		}
-	]
+	],
+
+	"settings":
+	{
+		"AStyleFormatter":
+		{
+		
+			"options_default":
+			{
+					"keep-one-line-blocks": true
+			}
+		}
+	}
 }

@@ -13,7 +13,8 @@
 #include <sstream>
 
 #include "domain.h"
-#include "ireconst.h"
+#include "volreconst.h"
+#include "vof.h"
 
 using namespace std;
 
@@ -136,32 +137,41 @@ void zalesak_disk_2d(domain *d)
     vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
     vector h {d->delta, d->delta, d->delta};
 
+    size_t no;
     // creating circle
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta * i, d->delta * j, 0};
-            double l2[] = {(x + half[0] - x0).l2(), (x + half[1] - x0).l2(), (x + half[2] - x0).l2(), (x + half[3] - x0).l2()};
-            if (*std::min_element(begin(l2), end(l2)) > r2)
+            if (d->exists_and_inside(i, j, 0, no))
             {
-                d->vof[ix] = 0;
-                continue;
-            }
-            if (*std::max_element(begin(l2), end(l2)) < r2)
-            {
-                d->vof[ix] = 1;
-                continue;
-            }
+                vector x {d->delta * i, d->delta * j, 0};
+                double l2[] = {(x - x0 + half[0]).l2(), (x - x0 + half[1]).l2(), (x - x0 + half[2]).l2(), (x - x0 + half[3]).l2()};
+                if (*std::min_element(begin(l2), end(l2)) > r2)
+                {
+                    d->vof[no] = 0;
+                    continue;
+                }
+                if (*std::max_element(begin(l2), end(l2)) < r2)
+                {
+                    d->vof[no] = 1;
+                    continue;
+                }
 
-            double min_dist = std::sqrt(*std::min_element(begin(l2), end(l2)));
-            vector n = x - x0;
-            n.normalize();
-            double alpha = r - min_dist;
+                double min_dist = std::sqrt(*std::min_element(begin(l2), end(l2)));
+                vector n = x - x0;
+                n.normalize();
+                double alpha = r - min_dist;
 
-            ireconst reconst = ireconst::from_alpha(h, n, alpha);
-            d->vof[ix] = reconst.volume / v;
-        }
+                volreconst *reconst = volreconst::from_alpha(h, n, alpha);
+                d->vof[no] = reconst->volume / v;
+                if (d->vof[no] > 1 || d->vof[no] < 0)
+                    std::cout << "--------------" << std::endl
+                              << "vof: " << d->vof[no] << std::endl
+                              << "alpha: " << alpha << std::endl
+                              << "n: " << n.x << " " << n.y << " " << std::endl
+                              << "volume: " << reconst->volume << std::endl
+                              << "type name: " << typeid(*reconst).name() << std::endl;
+                delete reconst;
+            }
 
     //removing slot
     double eps = 1e-4;
@@ -175,13 +185,13 @@ void zalesak_disk_2d(domain *d)
                 (x.x > c.x - l.x / 2.0) &&
                 (x.x < c.x + l.x / 2.0) &&
                 (x.y > c.y - l.y / 2.0) &&
-                (x.y < c.y + l.y / 2.0)) d->vof[ix] = 0;
+                (x.y < c.y + l.y / 2.0))
+                d->vof[ix] = 0;
         }
 
     //setting velocities
-    double pi=std::atan2(0, -1);
+    double pi = std::atan2(0, -1);
     double pi_314 = pi / 314.0;
-    std::cout<<"interface"<<std::endl;
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {
@@ -191,6 +201,103 @@ void zalesak_disk_2d(domain *d)
             d->uf[0][ix] = pi_314 * (50. - x.y);
             d->uf[1][ix] = pi_314 * (x.x - 50.);
         }
+}
+
+template <class I>
+std::size_t min_element_index ( I first, I last )
+{
+    I lowest = first;
+    std::size_t index = 0;
+    std::size_t i = 0;
+    if (first == last) return index;
+    while (++first != last)
+    {
+        ++i;
+        if (*first < *lowest)
+        {
+            lowest = first;
+            index = i;
+        }
+    }
+    return index;
+}
+
+void circle(domain *d)
+{
+    vector x0 {0.50, 0.50, 0};
+    double r = 0.3;
+
+    double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
+    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
+    vector h {d->delta, d->delta, d->delta};
+
+    size_t no;
+    // creating circle
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->exists_and_inside(i, j, 0, no))
+            {
+                vector x {d->delta *(i - 0.5), d->delta *(j - 0.5), 0};
+                vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
+                double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
+
+                vector n = x - x0;
+                n.normalize();
+                n.to_data(d->u, no);
+
+                size_t idx = min_element_index(l2, l2 + 4);
+                double alpha = r - ps[idx] * n;
+                d->p[no] = alpha;
+
+                if (*std::min_element(begin(l2), end(l2)) > r2)
+                {
+                    d->vof[no] = 0;
+                    continue;
+                }
+                if (*std::max_element(begin(l2), end(l2)) < r2)
+                {
+                    d->vof[no] = 1;
+                    continue;
+                }
+
+                volreconst *reconst = volreconst::from_alpha(h, n, alpha);
+                d->vof[no] = reconst->volume / v;
+                delete reconst;
+            }
+}
+
+void vof_reconst_accuracy_test()
+{
+    string files[]
+    {
+        "mesh/cavity10x10.json",
+        "mesh/cavity20x20.json",
+        "mesh/cavity40x40.json",
+        "mesh/cavity80x80.json",
+        "mesh/cavity160x160.json"
+    };
+    // bool first = true;
+    for (auto f : files)
+    {
+        cout << "========" << endl;
+        cout << "input file: " << f << endl;
+        cout << "Reading mesh" << endl;
+        domain *d = domain::create_from_file(f);
+        cout << "initializing" << endl;
+        circle(d);
+        vof vofc(d);
+        cout << "calculating normals" << endl;
+        vofc.calculate_normals();
+        cout << "writing" << endl;
+        // if (first)
+        //     d->write_vtk("out/my-method.vtk");
+        // first = false;
+        cout << "comparing" << endl;
+        cout << vof_err::compare(vofc) << endl;
+        //delete d;
+    }
+
+    cout << "done" << endl;
 }
 
 void square_2d(domain *d)
@@ -215,9 +322,9 @@ void square_2d(domain *d)
         }
 
     //setting velocities
-    double pi=std::atan2(0, -1);
+    double pi = std::atan2(0, -1);
     double pi_314 = pi / 314.0;
-    std::cout<<"interface"<<std::endl;
+
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {

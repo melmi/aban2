@@ -10,7 +10,6 @@
 #include "tests.h"
 #include "solver.h"
 #include "vof.h"
-#include "fsm.h"
 #include "vector.h"
 
 using namespace std;
@@ -53,24 +52,6 @@ void check_continuety(domain *d)
 
 int main(int argc, char const *argv[])
 {
-    cout << "Reading mesh" << endl;
-    domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    // square_2d(d);
-    // check_continuety(d);
-    // vof vofc(d);
-    // d->write_vtk("out/test0.vtk");
-    // for (int i = 0; i < 628 / d->dt; ++i)
-    // {
-    //     cout << "timestep " << i + 1 << endl;
-    //     vofc.advect();
-    //     d->write_vtk("out/test" + to_string(i + 1) + ".vtk");
-    // }
-    // d->write_vtk("out/test1.vtk");
-
-    solver s(d, "out/out");
-    // s.step();
-    s.run(10);
-
-    cout << "done" << endl;
+    vof_reconst_accuracy_test();
     return 0;
 }

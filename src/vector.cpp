@@ -24,27 +24,68 @@ vector vector::from_data(double **data, size_t i)
     return vector(data[0][i], data[1][i], data[2][i]);
 }
 
-double vector::operator*(vector v)
+void vector::to_data(double **data, size_t i) const
+{
+    data[0][i] = x;
+    data[1][i] = y;
+    data[2][i] = z;
+}
+
+vector vector::operator*(double r) const
+{
+    return {r * x, r * y, r * z};
+}
+
+double vector::operator*(vector v) const
 {
     return x * v.x + y * v.y + z * v.z;
 }
 
-vector vector::operator+(vector v)
+vector vector::operator+(vector v) const
 {
     return {x + v.x, y + v.y, z + v.z};
 }
 
-vector vector::operator-(vector v)
+vector vector::operator-(vector v) const
 {
     return {x - v.x, y - v.y, z - v.z};
 }
 
-double vector::l2()
+vector vector::operator-() const
+{
+    return -1.0 * (*this);
+}
+
+vector &vector::operator*=(double r)
+{
+    x *= r;
+    y *= r;
+    z *= r;
+    return *this;
+}
+
+vector &vector::operator+=(vector v)
+{
+    x += v.x;
+    y += v.y;
+    z += v.z;
+    return *this;
+}
+
+vector &vector::operator-=(vector v)
+{
+    x -= v.x;
+    y -= v.y;
+    z -= v.z;
+    return *this;
+}
+
+double vector::l2() const
 {
     return x * x + y * y + z * z;
 }
 
-double vector::l()
+double vector::l() const
 {
     return std::sqrt(l2());
 }
@@ -59,7 +100,12 @@ void vector::normalize(double epsilon)
 
 void vector::normalize()
 {
-    normalize(0);
+    normalize(1e-8);
+}
+
+vector operator*(double r, const vector v)
+{
+    return v * r;
 }
 
 }

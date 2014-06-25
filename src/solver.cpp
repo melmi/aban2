@@ -75,9 +75,9 @@ void solver::apply_source_terms()
 {
     for (size_t i = 0; i < d->n; ++i)
     {
-        d->ustar[0][i] += d->g.components[0] * d->dt;
-        d->ustar[1][i] += d->g.components[1] * d->dt;
-        d->ustar[2][i] += d->g.components[2] * d->dt;
+        d->ustar[0][i] += d->g.cmpnt[0] * d->dt;
+        d->ustar[1][i] += d->g.cmpnt[1] * d->dt;
+        d->ustar[2][i] += d->g.cmpnt[2] * d->dt;
     }
 }
 

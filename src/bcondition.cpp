@@ -58,14 +58,15 @@ public:
 
 class pressure_of_const_velocity: public bcondition
 {
-public:
+protected:
     vector u_bc;
+public:
     virtual bcdesc desc(size_t cellno, size_t dir)
     {
         return
         {
             1,
-            - (u_bc - vector::from_data(d->ustar, cellno)).components[dir] / d->dt,
+            - (u_bc - vector::from_data(d->ustar, cellno)).cmpnt[dir] / d->dt,
             0
         };
     }

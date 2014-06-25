@@ -9,7 +9,6 @@ Aban 2 To-Do List:
     ☐ Use a vector as delta
 
   Fress Surface:
-    ☐ Calculate interface normals using Waymouth and Yue (2010)
     ☐ Update advection of the volume fraction to use the method of Waymouth and Yue (2010)
     ☐ implement the interface rho*u advection
 
@@ -26,6 +25,7 @@ Aban 2 To-Do List:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+ ✔ Calculate interface normals using Waymouth and Yue (2010) @done (14-06-25 12:04) @project(Aban 2 To-Do List / Fress Surface)
  ✔ Update the code to use u again (instead of q) @done (14-05-20 17:43) @project(Aban 2 To-Do List / Flow Solver)
  ✔ Organize boundary conditions for a better parameter passing to functions @done (14-05-20 17:43) @project(Aban 2 To-Do List / Software)
   It might be by using std::bind struct.
