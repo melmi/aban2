@@ -55,7 +55,6 @@ public:
     vector *extract_vectors(mesh_row *row, double **var);
     void insert_vectors(mesh_row *row, double **var, vector *row_vals);
     size_t *get_row_idxs(mesh_row *row);
-    double get_value(double *var, flowbc::member bcmember, size_t pno, size_t i[3], int ii[3], double default_value);
     void *create_var(size_t rank);
     void delete_var(size_t rank, void *v);
 

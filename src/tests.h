@@ -21,6 +21,41 @@ using namespace std;
 namespace aban2
 {
 
+template <typename T>
+string to_string (T number)
+{
+    ostringstream ss;
+    ss << number;
+    return ss.str();
+}
+
+void check_continuety(domain *d)
+{
+    double *div = new double[d->n];
+    std::fill_n(div, d->n, 0);
+
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+        for (size_t irow = 1; irow < d->nrows[dir] - 1; ++irow)
+        {
+            mesh_row *row = d->rows[dir] + irow;
+            for (size_t i = 1; i < row->n - 1; ++i)
+            {
+                double *u = d->extract_scalars(row, d->uf[row->dir]);
+
+                size_t no = d->cellno(row, i);
+                div[no] = u[i] - u[i - 1];
+
+                delete[] u;
+            }
+        }
+
+    std::for_each(div, div + d->n, [](double & x)
+    {
+        x = std::abs(x);
+    });
+    cout << "divergance: " << std::accumulate(div, div + d->n, 0) << std::endl;
+}
+
 string rowtostr(mesh_row *r)
 {
     std::stringstream s;
@@ -302,13 +337,9 @@ void vof_reconst_accuracy_test()
 
 void square_2d(domain *d)
 {
-    vector x0 {50, 75, 0};
-    double r = 15;
-    double h_2 = d->delta / 2;
-
     //square
     double eps = 1e-4;
-    vector c {50, 70, 0}, l {20 + eps, 20 + eps, 0};
+    vector c {25, 50, 0}, l {20 + eps, 20 + eps, 0};
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {
@@ -322,18 +353,8 @@ void square_2d(domain *d)
         }
 
     //setting velocities
-    double pi = std::atan2(0, -1);
-    double pi_314 = pi / 314.0;
-
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta *i + h_2, d->delta *j + h_2, 0}; // interface u is a half cell staggered
-
-            d->uf[0][ix] = pi_314 * (50. - x.y);
-            d->uf[1][ix] = pi_314 * (x.x - 50.);
-        }
+    for (size_t i = 0; i < d->n; ++i)
+        d->uf[0][i] = 1;
 }
 
 }

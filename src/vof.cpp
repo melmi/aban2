@@ -1,7 +1,10 @@
 #include "vof.h"
 
+#include <cmath>
+#include <memory>
 #include "gradient.h"
 #include "volreconst.h"
+#include <iostream>
 
 namespace aban2
 {
@@ -10,6 +13,9 @@ vof::vof(aban2::domain *_d): d(_d)
 {
     vcell = d->delta * d->delta * d->delta;
     mass = new double[d->n];
+    rhou[0] = new double[d->n];
+    rhou[1] = new double[d->n];
+    rhou[2] = new double[d->n];
     fullnesses = new fullness[d->n];
     on_interface = new bool[d->n];
     reconsts = new volreconst *[d->n];
@@ -19,6 +25,9 @@ vof::vof(aban2::domain *_d): d(_d)
 vof::~vof()
 {
     delete[] mass;
+    delete[] rhou[0];
+    delete[] rhou[1];
+    delete[] rhou[2];
     delete[] fullnesses;
     delete[] on_interface;
     delete_reconsts();
@@ -272,7 +281,11 @@ void vof::set_normal(size_t i, size_t j, size_t k, size_t no)
 
 void vof::create_reconsts()
 {
+    vector c {d->delta, d->delta, d->delta};
 
+    for (int i = 0; i < d->n; ++i)
+        if (on_interface[i])
+            reconsts[i] = volreconst::from_volume(c, -vector::from_data(d->nb, i), mass[i]);
 }
 
 void vof::delete_reconsts()
@@ -285,55 +298,114 @@ void vof::delete_reconsts()
         }
 }
 
-double vof::get_vof_flux(mesh_row *row, size_t i, double udt)
+double vof::rho_bar(double _vof)
 {
-    size_t no = d->cellno(row, i);
-    // if (vos->fullnesses[no] != fullness::half)return std::abs(udt) * d->vof[no];
-    //auto remaining = reconsts[no]->get_remaining(row->dir, udt);
-    auto result = std::get<0>(reconsts[no]->get_flux(row->dir, udt)); // - remaining->volume;
-    //reconsts[no] = remaining;
-    return result;
+    return _vof * d->_rho + (1.0 - _vof) * d->_rho;
 }
 
-void vof::advect_row(mesh_row *row)
+std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3])
 {
-    double flux_vof;
+    size_t no = d->cellno(row, i);
 
+    if (on_interface[no])
+    {
+        auto result = reconsts[no]->get_flux(row->dir, udt);
+        return result;
+    }
+    {
+        return std::make_tuple(fullnesses[no] == fullness::empty ? 0 : d->delta * d->delta * std::abs(udt), vector());
+    }
+}
+
+void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
+{
+    std::tuple<double, vector> flux;
+    size_t n = row->n;
+    double a = d->delta * d->delta;
     double *uf = d->extract_scalars(row, d->uf[row->dir]);
     double *row_mass = d->extract_scalars(row, mass);
+    double *row_rhou[3]
+    {
+        d->extract_scalars(row, rhou[0]),
+        d->extract_scalars(row, rhou[1]),
+        d->extract_scalars(row, rhou[2])
+    };
 
-    for (size_t face = 0; face < row->n - 1; ++face)
+    for (size_t face = 0; face < n - 1; ++face)
     {
         double udt = uf[face] * d->dt;
         size_t from, to;
         if (udt > 0)to = (from = face) + 1; else from = (to = face) + 1;
 
-        flux_vof = get_vof_flux(row, from, udt);
+        flux = get_flux(row, from, udt, grad_u_dir);
 
-        // if (row_mass[from] - flux_vof < 0)flux_vof = h3 - row_mass[from];
-        // if (row_mass[to] + flux_vof > h3)flux_vof = h3 - row_mass[to];
+        row_mass[from] -= std::get<0>(flux);
+        row_mass[to]   += std::get<0>(flux);
 
-        row_mass[from] -= flux_vof;
-        row_mass[to] += flux_vof;
+        for (int i = 0; i < 3; ++i)
+        {
+            row_rhou[i][from] -= std::get<1>(flux).cmpnt[i];
+            row_rhou[i][to] += std::get<1>(flux).cmpnt[i];
+        }
     }
 
-    // auto startbc = d->boundaries[row->start_code];
-    // auto endbc   = d->boundaries[row->end_code  ];
+    double uf_start = flowbc::fval_start(d, row, d->u[row->dir], flowbc::umembers[row->dir]);
+    double uf_end   = flowbc::fval_end  (d, row, d->u[row->dir], flowbc::umembers[row->dir]);
 
-    // double uf_start =
-    //     startbc->face_val(&bcondition::q, d->q[row->dir], row, bcside::start, row->dir) / d->_rho;
-    // double uf_end   =
-    //     endbc  ->face_val(&bcondition::q, d->q[row->dir], row, bcside::end  , row->dir) / d->_rho;
+    double vof_start = flowbc::fval_start(d, row, d->vof, &flowbc::vof);
+    double vof_end   = flowbc::fval_end  (d, row, d->vof, &flowbc::vof);
 
-    // row_mass[0         ] +=
-    //     startbc->face_val(&bcondition::vof, d->vof, row, bcside::start, row->dir) * uf_start * d->dt;
-    // row_mass[row->n - 1] -=
-    //     endbc  ->face_val(&bcondition::vof, d->vof, row, bcside::end  , row->dir) * uf_end   * d->dt;
+    mass[0    ] += vof_start * a * uf_start * d->dt;
+    mass[n - 1] -= vof_end   * a * uf_end   * d->dt;
+
+    double rhov_start = rho_bar(vof_start) * a * uf_start * d->dt;
+    double rhov_end   = rho_bar(vof_end  ) * a * uf_end   * d->dt;
+    for (int i = 0; i < 3; ++i)
+    {
+        rhou[i][0    ] += rhov_start * flowbc::fval_start(d, row, d->u[i], flowbc::umembers[i]);
+        rhou[i][n - 1] -= rhov_end   * flowbc::fval_end  (d, row, d->u[i], flowbc::umembers[i]);
+    }
 
     d->insert_scalars(row, mass, row_mass);
 
-    delete[] row_mass;
     delete[] uf;
+    delete[] row_mass;
+    delete[] row_rhou[0];
+    delete[] row_rhou[1];
+    delete[] row_rhou[2];
+}
+
+void vof::correct_vofs(size_t dir)
+{
+    double *grads = (double *)d->create_var(1);
+
+    // constructing grads
+    for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+    {
+        auto row = d->rows[dir] + irow;
+        double *uf(d->extract_scalars(row, d->uf[dir]));
+
+        for (size_t i = 1; i < row->n - 2; ++i)
+        {
+            auto no = d->cellno(row, i);
+            grads[no] = (uf[i] - uf[i - 1]) / d->delta;
+        }
+
+        size_t no;
+        no = d->cellno(row, 0);
+        grads[no] = (uf[0] - flowbc::fval_start(d, row, d->u[dir], flowbc::umembers[dir])) / d->delta;
+        no = d->cellno(row, row->n - 1);
+        grads[no] = (flowbc::fval_end(d, row, d->u[dir], flowbc::umembers[dir]) - uf[row->n - 2]) / d->delta;
+
+        delete[] uf;
+    }
+
+    // applying correction terms
+    for (size_t i = 0; i < d->n; ++i)
+        if (d->vof[i] > 0.5)
+            mass[i] += grads[i] * vcell;
+
+    delete[] grads;
 }
 
 void vof::calculate_normals()
@@ -352,26 +424,48 @@ void vof::calculate_normals()
 
 void vof::advect()
 {
-    calculate_normals();
-    delete_reconsts();
-    create_reconsts();
+    for (size_t i = 0; i < d->n; ++i)
+    {
+        mass[i] = d->vof[i] * vcell;
+        double rhov = (d->vof[i] * d->_rho + (1.0 - d->vof[i]) * d->_rho) * vcell;
+        rhou[0][i] = rhov * (d->ustar[0][i] = d->u[0][i]);
+        rhou[1][i] = rhov * (d->ustar[1][i] = d->u[1][i]);
+        rhou[2][i] = rhov * (d->ustar[2][i] = d->u[2][i]);
+    }
 
-    for (size_t i = 0; i < d->n; ++i) mass[i] = d->vof[i] * vcell;
-
-    //vos->make_ls();
     start_dir = (start_dir + 1) % NDIRS;
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
     {
-        size_t dir = (start_dir + idir) % NDIRS;
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-        {
-            mesh_row *row = d->rows[dir] + irow;
-            advect_row(row);
-        }
-    }
+        calculate_normals();
+        delete_reconsts();
+        create_reconsts();
 
-    for (size_t i = 0; i < d->n; ++i) d->vof[i] = mass[i] / vcell;
+        size_t dir = (start_dir + idir) % NDIRS;
+
+        double *grad_u_dir[3]
+        {
+            gradient::of_scalar_dir_oriented(d, d->ustar[0], flowbc::umembers[0], dir),
+            gradient::of_scalar_dir_oriented(d, d->ustar[1], flowbc::umembers[1], dir),
+            gradient::of_scalar_dir_oriented(d, d->ustar[2], flowbc::umembers[2], dir)
+        };
+
+        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+            advect_row(d->rows[dir] + irow, grad_u_dir);
+
+        correct_vofs(dir);
+
+        for (size_t i = 0; i < d->n; ++i)
+        {
+            d->vof[i] = mass[i] / vcell;
+            double rhov = rho_bar(d->vof[i]) * vcell;
+            d->ustar[0][i] = rhou[0][i] / rhov;
+            d->ustar[1][i] = rhou[1][i] / rhov;
+            d->ustar[2][i] = rhou[2][i] / rhov;
+        }
+
+        for (int i = 0; i < 3; ++i) delete[] grad_u_dir[i];
+    }
 }
 
 int vof_err::is_inside(vector n, double alpha, vector x)

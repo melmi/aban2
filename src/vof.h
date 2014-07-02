@@ -9,8 +9,7 @@
 #define _VOF_H_
 
 #include <array>
-#include <cmath>
-#include <memory>
+#include <tuple>
 #include "domain.h"
 #include "volreconst.h"
 
@@ -35,6 +34,7 @@ class vof
     double vcell; //cell volume
     size_t start_dir = 0;
     double *mass;
+    double *rhou[3];
     fullness *fullnesses;
     bool *on_interface;
     volreconst **reconsts;
@@ -53,8 +53,10 @@ class vof
     void set_normal(size_t i, size_t j, size_t k, size_t no);
     void create_reconsts();
     void delete_reconsts();
-    double get_vof_flux(mesh_row *row, size_t i, double udt);
-    void advect_row(mesh_row *row);
+    inline double rho_bar(double _vof);
+    inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3]);
+    void advect_row(mesh_row *row, double *grad_u_dir[3]);
+    void correct_vofs(size_t dir);
 public:
     vof(domain *_d);
     ~vof();

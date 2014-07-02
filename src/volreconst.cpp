@@ -77,19 +77,19 @@ double volreconst::get_correct_moment(size_t dir, double moment)
 
 volreconst *volreconst::get_remaining(size_t dir, double delta)
 {
-    bool from_start = delta * orig_m.cmpnt[dir] < 0.0;
+    bool cut_from_start = delta * orig_m.cmpnt[dir] < 0.0;
     delta = std::abs(delta);
 
     vector new_c = c;
     new_c.cmpnt[dir] -= delta;
 
     double new_alpha;
-    if (from_start)
-        new_alpha = -(delta * m.cmpnt[dir] - alpha);
+    if (cut_from_start)
+        new_alpha = alpha - delta * m.cmpnt[dir];
     else
         new_alpha = alpha;
 
-    return volreconst::from_alpha(new_c, m, new_alpha);
+    return volreconst::from_alpha(new_c, orig_m, new_alpha);
 }
 
 std::tuple<double, vector> volreconst::get_flux(size_t dir, double delta)

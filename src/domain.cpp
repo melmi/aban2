@@ -164,22 +164,6 @@ size_t *domain::get_row_idxs(mesh_row *row)
     return row_idxs;
 }
 
-double domain::get_value(double *var, flowbc::member bcmember, size_t pno, size_t i[3], int ii[3], double default_value)
-{
-    size_t ix = idx(i[0] + ii[0], i[1] + ii[1], i[2] + ii[2]);
-    char code = codes[ix];
-    if (code == INSIDE) return var[cellnos[ix]];
-
-    size_t noneq_idx;
-    if (ii[0] == ii[1])noneq_idx = 2;
-    else if (ii[0] == ii[2])noneq_idx = 1;
-    else if (ii[1] == ii[2])noneq_idx = 0;
-    else return default_value;
-
-    auto bc = boundaries[code]->*bcmember;
-    return bc->face_val(pno, noneq_idx, var, ii[noneq_idx] > 0 ? delta : -delta);
-}
-
 void *domain::create_var(size_t rank)
 {
     if (rank == 1)
