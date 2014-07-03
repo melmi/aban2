@@ -58,6 +58,76 @@ double ** *gradient::of_vec(domain *d, double **phi, flowbc::member bc[3])
     return result;
 }
 
+double *avg_uf(domain *d, size_t dir)
+{
+    double *result = new double[d->n];
+
+    for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+    {
+        auto row = d->rows[dir] + irow;
+        auto uf_row = d->extract_scalars(row, d->uf[dir]);
+        auto uf_row_avg = new double[row->n];
+
+        size_t n = row->n;
+        for (size_t i = 1; i < n - 1; ++i)uf_row_avg[i] = (uf_row[i - 1] + uf_row[i]) / 2.0;
+        uf_row_avg[0] = (flowbc::fval_start(d, row, d->u[dir], flowbc::umembers[dir]) + uf_row[0]) / 2.0;
+        uf_row_avg[n - 1] = (flowbc::fval_end(d, row, d->u[dir], flowbc::umembers[dir]) + uf_row[n - 2]) / 2.0;
+
+        d->insert_scalars(row, result, uf_row_avg);
+        delete[] uf_row;
+        delete[] uf_row_avg;
+    }
+
+    return result;
+}
+
+double *grad_uf_dir(domain *d, size_t dir)
+{
+    double *result = new double[d->n];
+
+    for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+    {
+        auto row = d->rows[dir] + irow;
+        auto uf_row = d->extract_scalars(row, d->uf[dir]);
+        auto grad_row = new double[row->n];
+
+        size_t n = row->n;
+        for (size_t i = 1; i < n - 1; ++i)grad_row[i] = (uf_row[i] - uf_row[i - 1]) / d->delta;
+        grad_row[0] = (uf_row[0] - flowbc::fval_start(d, row, d->u[dir], flowbc::umembers[dir])) / d->delta;
+        grad_row[n - 1] = (flowbc::fval_end(d, row, d->u[dir], flowbc::umembers[dir]) - uf_row[n - 2]) / d->delta;
+
+        d->insert_scalars(row, result, grad_row);
+        delete[] uf_row;
+        delete[] grad_row;
+    }
+
+    return result;
+}
+
+double ** *gradient::of_uf(domain *d)
+{
+    double *avg[3]
+    {
+        avg_uf(d, 0),
+        avg_uf(d, 1),
+        avg_uf(d, 2)
+    };
+
+    double ***result = new double **[3];
+    for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
+    {
+        result[icmpnt] = of_scalar(d, avg[icmpnt], flowbc::umembers[icmpnt]);
+        delete[] result[icmpnt][icmpnt];
+        result[icmpnt][icmpnt] = grad_uf_dir(d, icmpnt);
+    }
+
+    delete[] avg[0];
+    delete[] avg[1];
+    delete[] avg[2];
+
+    return result;
+}
+
 double *gradient::divergance(domain *d, double **phi, flowbc::member bc[3])
 {
     double *result = (double *)d->create_var(1);
