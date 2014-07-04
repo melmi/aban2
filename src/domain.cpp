@@ -183,10 +183,11 @@ void *domain::create_var(size_t rank)
 
 void domain::delete_var(size_t rank, void *v)
 {
+    if (v == nullptr) return;
     if (rank > 1)
         for (int i = 0; i < 3; ++i)
             delete_var(rank - 1, ((double **)v)[i]);
-    if (v != nullptr) delete[] (double *)v;
+    delete[] (double *)v;
 }
 
 void domain::create_vars()

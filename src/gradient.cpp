@@ -34,9 +34,8 @@ void gradient::add_1d_row(domain *d, mesh_row *row, double *phi, double *grad_di
 double *gradient::of_scalar_dir_oriented(domain *d, double *phi, flowbc::member bc, size_t dir)
 {
     double *result = (double *)d->create_var(1);
-    for (size_t dir = 0; dir < NDIRS; ++dir)
-        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-            add_1d_row(d, d->rows[dir] + irow, phi, result, bc);
+    for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+        add_1d_row(d, d->rows[dir] + irow, phi, result, bc);
     return result;
 }
 
@@ -53,6 +52,7 @@ double **gradient::of_scalar(domain *d, double *phi, flowbc::member bc)
 double ** *gradient::of_vec(domain *d, double **phi, flowbc::member bc[3])
 {
     double ***result = new double **[3];
+    result[2] = nullptr;
     for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
         result[icmpnt] = of_scalar(d, phi[icmpnt], bc[icmpnt]);
     return result;
@@ -114,6 +114,7 @@ double ** *gradient::of_uf(domain *d)
     };
 
     double ***result = new double **[3];
+    result[2] = nullptr;
     for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
     {
         result[icmpnt] = of_scalar(d, avg[icmpnt], flowbc::umembers[icmpnt]);

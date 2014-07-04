@@ -4,7 +4,6 @@
 #include <memory>
 #include "gradient.h"
 #include "volreconst.h"
-#include <iostream>
 
 namespace aban2
 {
@@ -375,7 +374,7 @@ void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
     delete[] row_rhou[2];
 }
 
-void vof::correct_vofs(double* grad_uf_dir)
+void vof::correct_vofs(double *grad_uf_dir)
 {
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
