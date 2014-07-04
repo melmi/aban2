@@ -375,37 +375,12 @@ void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
     delete[] row_rhou[2];
 }
 
-void vof::correct_vofs(size_t dir)
+void vof::correct_vofs(double* grad_uf_dir)
 {
-    double *grads = (double *)d->create_var(1);
-
-    // constructing grads
-    for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-    {
-        auto row = d->rows[dir] + irow;
-        double *uf(d->extract_scalars(row, d->uf[dir]));
-
-        for (size_t i = 1; i < row->n - 2; ++i)
-        {
-            auto no = d->cellno(row, i);
-            grads[no] = (uf[i] - uf[i - 1]) / d->delta;
-        }
-
-        size_t no;
-        no = d->cellno(row, 0);
-        grads[no] = (uf[0] - flowbc::fval_start(d, row, d->u[dir], flowbc::umembers[dir])) / d->delta;
-        no = d->cellno(row, row->n - 1);
-        grads[no] = (flowbc::fval_end(d, row, d->u[dir], flowbc::umembers[dir]) - uf[row->n - 2]) / d->delta;
-
-        delete[] uf;
-    }
-
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
         if (d->vof[i] > 0.5)
-            mass[i] += grads[i] * vcell;
-
-    delete[] grads;
+            mass[i] += grad_uf_dir[i] * vcell;
 }
 
 void vof::calculate_normals()
@@ -434,6 +409,7 @@ void vof::advect()
     }
 
     start_dir = (start_dir + 1) % NDIRS;
+    auto grad_uf = gradient::of_uf(d);
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
     {
@@ -453,7 +429,7 @@ void vof::advect()
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             advect_row(d->rows[dir] + irow, grad_u_dir);
 
-        correct_vofs(dir);
+        correct_vofs(grad_uf[dir][dir]);
 
         for (size_t i = 0; i < d->n; ++i)
         {
@@ -466,6 +442,8 @@ void vof::advect()
 
         for (int i = 0; i < 3; ++i) delete[] grad_u_dir[i];
     }
+
+    domain::delete_var(3, grad_uf);
 }
 
 int vof_err::is_inside(vector n, double alpha, vector x)

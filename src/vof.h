@@ -56,7 +56,7 @@ class vof
     inline double rho_bar(double _vof);
     inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3]);
     void advect_row(mesh_row *row, double *grad_u_dir[3]);
-    void correct_vofs(size_t dir);
+    void correct_vofs(double* grad_uf_dir);
 public:
     vof(domain *_d);
     ~vof();
