@@ -8,7 +8,7 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
-#include <iostream>
+#include <ostream>
 
 namespace aban2
 {
@@ -26,10 +26,11 @@ struct vector
 
     vector();
     vector(double _x, double _y, double _z);
-    vector(double c): vector(c, c, c) {}
+    explicit vector(double c): vector(c, c, c) {}
 
     vector operator*(double r) const;
     double operator*(vector v) const;
+    vector operator^(vector v) const;
     vector operator+(vector v) const;
     vector operator-(vector v) const;
     vector operator-() const;
@@ -47,6 +48,7 @@ struct vector
 };
 
 vector operator*(const double r, const vector v);
+std::ostream& operator<< (std::ostream &out, vector v);
 
 }
 

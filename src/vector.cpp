@@ -41,6 +41,11 @@ double vector::operator*(vector v) const
     return x * v.x + y * v.y + z * v.z;
 }
 
+vector vector::operator^(vector v) const
+{
+    return {y *v.z - z * v.y, z *v.x - x * v.z, x *v.y - y * v.x};
+}
+
 vector vector::operator+(vector v) const
 {
     return {x + v.x, y + v.y, z + v.z};
@@ -106,6 +111,15 @@ void vector::normalize()
 vector operator*(double r, const vector v)
 {
     return v * r;
+}
+
+std::ostream& operator<< (std::ostream &out, vector v)
+{
+    out << "(" 
+        << v.x << ", "
+        << v.y << ", "
+        << v.z << ")";
+    return out;
 }
 
 }
