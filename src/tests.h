@@ -21,6 +21,8 @@ using namespace std;
 namespace aban2
 {
 
+//-------------------------- utility functions
+
 template <typename T>
 string to_string (T number)
 {
@@ -106,6 +108,26 @@ void print_rows(domain *d)
     }
 }
 
+template <class I>
+std::size_t min_element_index ( I first, I last )
+{
+    I lowest = first;
+    std::size_t index = 0;
+    std::size_t i = 0;
+    if (first == last) return index;
+    while (++first != last)
+    {
+        ++i;
+        if (*first < *lowest)
+        {
+            lowest = first;
+            index = i;
+        }
+    }
+    return index;
+}
+
+//-------------------------- tests
 
 void adv_test1(domain *d)
 {
@@ -144,124 +166,47 @@ void diff_test1(domain *d)
                 }
 }
 
-void vortex(domain *d, double w, double x0, double y0)
+void circle(domain *d, vector x0, double r);
+void vortex(domain *d, vector x0, double omega);
+
+void vof_reconst_accuracy_test()
 {
-    for (int i = 0; i < d->ndir[0]; ++i)
-        for (int j = 0; j < d->ndir[1]; ++j)
-            for (int k = 0; k < d->ndir[2]; ++k)
-                if (d->exists(i, j, k))
-                {
-                    size_t ix = d->cellnos[d->idx(i, j, k)];
-
-                    double x = i * d->delta + d->delta / 2.0;
-                    double y = j * d->delta + d->delta / 2.0;
-                    double z = k * d->delta + d->delta / 2.0;
-
-                    d->u[0][ix] = -w * (y - y0);// + 2.0 * x;
-                    d->u[1][ix] = w * (x - x0);
-                    d->u[2][ix] = 0;
-                }
-}
-
-void zalesak_disk_2d(domain *d)
-{
-    vector x0 {50, 75, 0};
-    double r = 15;
-
-    double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
-    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
-    vector h {d->delta, d->delta, d->delta};
-
-    size_t no;
-    // creating circle
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-            if (d->exists_and_inside(i, j, 0, no))
-            {
-                vector x {d->delta * i, d->delta * j, 0};
-                double l2[] = {(x - x0 + half[0]).l2(), (x - x0 + half[1]).l2(), (x - x0 + half[2]).l2(), (x - x0 + half[3]).l2()};
-                if (*std::min_element(begin(l2), end(l2)) > r2)
-                {
-                    d->vof[no] = 0;
-                    continue;
-                }
-                if (*std::max_element(begin(l2), end(l2)) < r2)
-                {
-                    d->vof[no] = 1;
-                    continue;
-                }
-
-                double min_dist = std::sqrt(*std::min_element(begin(l2), end(l2)));
-                vector n = x - x0;
-                n.normalize();
-                double alpha = r - min_dist;
-
-                volreconst *reconst = volreconst::from_alpha(h, n, alpha);
-                d->vof[no] = reconst->volume / v;
-                if (d->vof[no] > 1 || d->vof[no] < 0)
-                    std::cout << "--------------" << std::endl
-                              << "vof: " << d->vof[no] << std::endl
-                              << "alpha: " << alpha << std::endl
-                              << "n: " << n.x << " " << n.y << " " << std::endl
-                              << "volume: " << reconst->volume << std::endl
-                              << "type name: " << typeid(*reconst).name() << std::endl;
-                delete reconst;
-            }
-
-    //removing slot
-    double eps = 1e-4;
-    vector c {50, 72.5, 0}, l {5 + eps, 25 + eps, 0};
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta * i, d->delta * j, 0};
-            if (
-                (x.x > c.x - l.x / 2.0) &&
-                (x.x < c.x + l.x / 2.0) &&
-                (x.y > c.y - l.y / 2.0) &&
-                (x.y < c.y + l.y / 2.0))
-                d->vof[ix] = 0;
-        }
-
-    //setting velocities
-    double pi = std::atan2(0, -1);
-    double pi_314 = pi / 314.0;
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta *i + h_2, d->delta *j + h_2, 0}; // interface u is a half cell staggered
-
-            d->uf[0][ix] = pi_314 * (50. - x.y);
-            d->uf[1][ix] = pi_314 * (x.x - 50.);
-        }
-}
-
-template <class I>
-std::size_t min_element_index ( I first, I last )
-{
-    I lowest = first;
-    std::size_t index = 0;
-    std::size_t i = 0;
-    if (first == last) return index;
-    while (++first != last)
+    string files[]
     {
-        ++i;
-        if (*first < *lowest)
-        {
-            lowest = first;
-            index = i;
-        }
+        "mesh/cavity10x10.json",
+        "mesh/cavity20x20.json",
+        "mesh/cavity40x40.json",
+        "mesh/cavity80x80.json",
+        "mesh/cavity160x160.json"
+    };
+    // bool first = true;
+    for (auto f : files)
+    {
+        cout << "========" << endl;
+        cout << "input file: " << f << endl;
+        cout << "Reading mesh" << endl;
+        domain *d = domain::create_from_file(f);
+        cout << "initializing" << endl;
+        circle(d, {0.5, 0.5, 0}, 0.30);
+        vof vofc(d);
+        cout << "calculating normals" << endl;
+        vofc.calculate_normals();
+        cout << "writing" << endl;
+        // if (first)
+        //     d->write_vtk("out/my-method.vtk");
+        // first = false;
+        cout << "comparing" << endl;
+        cout << vof_err::compare(vofc) << endl;
+        //delete d;
     }
-    return index;
+
+    cout << "done" << endl;
 }
 
-void circle(domain *d)
-{
-    vector x0 {0.50, 0.50, 0};
-    double r = 0.3;
+//-------------------------- vof shapes
 
+void circle(domain *d, vector x0, double r)
+{
     double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
     vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
     vector h {d->delta, d->delta, d->delta};
@@ -301,45 +246,13 @@ void circle(domain *d)
             }
 }
 
-void vof_reconst_accuracy_test()
+void zalesak_disk(domain *d)
 {
-    string files[]
-    {
-        "mesh/cavity10x10.json",
-        "mesh/cavity20x20.json",
-        "mesh/cavity40x40.json",
-        "mesh/cavity80x80.json",
-        "mesh/cavity160x160.json"
-    };
-    // bool first = true;
-    for (auto f : files)
-    {
-        cout << "========" << endl;
-        cout << "input file: " << f << endl;
-        cout << "Reading mesh" << endl;
-        domain *d = domain::create_from_file(f);
-        cout << "initializing" << endl;
-        circle(d);
-        vof vofc(d);
-        cout << "calculating normals" << endl;
-        vofc.calculate_normals();
-        cout << "writing" << endl;
-        // if (first)
-        //     d->write_vtk("out/my-method.vtk");
-        // first = false;
-        cout << "comparing" << endl;
-        cout << vof_err::compare(vofc) << endl;
-        //delete d;
-    }
+    circle(d, {50, 75, 0}, 15);
 
-    cout << "done" << endl;
-}
-
-void square_2d(domain *d)
-{
-    //square
+    //removing slot
     double eps = 1e-4;
-    vector c {25, 50, 0}, l {20 + eps, 20 + eps, 0};
+    vector c {50, 72.5, 0}, l {5 + eps, 25 + eps, 0};
     for (size_t j = 0; j < d->ndir[1]; ++j)
         for (size_t i = 0; i < d->ndir[0]; ++i)
         {
@@ -349,12 +262,42 @@ void square_2d(domain *d)
                 (x.x > c.x - l.x / 2.0) &&
                 (x.x < c.x + l.x / 2.0) &&
                 (x.y > c.y - l.y / 2.0) &&
-                (x.y < c.y + l.y / 2.0)) d->vof[ix] = 1;
+                (x.y < c.y + l.y / 2.0))
+                d->vof[ix] = 0;
         }
+}
 
-    //setting velocities
-    for (size_t i = 0; i < d->n; ++i)
-        d->uf[0][i] = 1;
+void square(domain *d, vector c, double a)
+{
+    //square
+    double eps = 1e-4;
+    for (size_t j = 0; j < d->ndir[1]; ++j)
+        for (size_t i = 0; i < d->ndir[0]; ++i)
+        {
+            size_t ix = d->cellnos[d->idx(i, j, 0)];
+            vector x {d->delta * i, d->delta * j, 0};
+            if (    (x.x + eps > c.x - a / 2.0) &&
+                    (x.x - eps < c.x + a / 2.0) &&
+                    (x.y + eps > c.y - a / 2.0) &&
+                    (x.y - eps < c.y + a / 2.0))
+                d->vof[ix] = 1;
+        }
+}
+
+//-------------------------- velocity fields
+
+void vortex(domain *d, vector x0, double omega)
+{
+    double h_2 = d->delta / 2.0;
+    for (size_t j = 0; j < d->ndir[1]; ++j)
+        for (size_t i = 0; i < d->ndir[0]; ++i)
+        {
+            size_t ix = d->cellnos[d->idx(i, j, 0)];
+            vector x {d->delta *i + h_2, d->delta *j + h_2, 0}; // interface u is a half cell staggered
+
+            d->uf[0][ix] = omega * (x0.y - x.y);
+            d->uf[1][ix] = omega * (x.x - x0.x);
+        }
 }
 
 }

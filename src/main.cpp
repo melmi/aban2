@@ -18,9 +18,9 @@ using namespace aban2;
 int main(int argc, char const *argv[])
 {
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    // for (int i = 0; i < d->n; ++i)d->p[i] = i;
-    // zalesak_disk_2d(d);
-    square_2d(d);
+    // square(d, {50, 75, 0}, 10);
+    circle(d, {50, 75, 0}, 15);
+    vortex(d, {50, 50, 0}, 0.01);
     vof vofc(d);
     for (int i = 0; i < 650; ++i)
     {
