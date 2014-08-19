@@ -35,8 +35,10 @@ domain::domain(Json::Value *root): mesh(root)
     t = 0;
     dt = root->get("dt", 1).asDouble();
     tend = root->get("tend", 1).asDouble();
-    _rho = root->get("rho", 1000).asDouble();
-    _nu = root->get("nu", 1e-3).asDouble();
+    rho0 = root->get("rho0", 1000).asDouble();
+    rho1 = root->get("rho1", 1000).asDouble();
+    nu0 = root->get("nu0", 1e-3).asDouble();
+    nu1 = root->get("nu1", 1e-3).asDouble();
     Json::Value gnode = (*root)["g"];
     g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
     write_interval = root->get("write_interval", 1).asInt();
@@ -54,10 +56,11 @@ void domain::register_vars()
     varlist.push_back(varinfo("p", 1, true, &p));
     varlist.push_back(varinfo("u", 2, true, &u));
     varlist.push_back(varinfo("ustar", 2, false, &ustar));
+    varlist.push_back(varinfo("rho", 2, false, &rho));
+    varlist.push_back(varinfo("nu", 2, false, &nu));
     varlist.push_back(varinfo("uf", 2, false, &uf));
 
     varlist.push_back(varinfo("vof", 1, true, &vof));
-    varlist.push_back(varinfo("ls", 1, true, &ls));
     varlist.push_back(varinfo("nb", 2, true, &nb));
 }
 
@@ -220,6 +223,16 @@ void domain::delete_vars()
             break;
         }
     }
+}
+
+double domain::rho_bar(double _vof)
+{
+    return _vof * rho1 + (1.0 - _vof) * rho0;
+}
+
+double domain::nu_bar(double _vof)
+{
+    return _vof * nu1 + (1.0 - _vof) * nu0;
 }
 
 }

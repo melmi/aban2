@@ -41,34 +41,36 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(mesh_row *row, double *phi, double D, flowbc::member bc)
+void diffusion::diffuse(mesh_row *row, double *phi, double *D, flowbc::member bc)
 {
     double *phi_row = d->extract_scalars(row, phi);
+    double *d_row = d->extract_scalars(row, D);
     double dx = d->delta, dt = d->dt;
     size_t n = row->n;
-    double coeff = D * dt / dx / dx;
+    double dt_dx2 = dt / dx / dx;
 
     double *aa = new double[n], *bb = new double[n], *cc = new double[n];
 
     for (size_t i = 0; i < n; ++i)
     {
-        aa[i] = cc[i] = -coeff;
-        bb[i] = 1.0 + 2.0 * coeff;
+        aa[i] = cc[i] = -d_row[i] * dt_dx2;
+        bb[i] = 1.0 + 2.0 * d_row[i] * dt_dx2;
     }
 
     auto startbc = (d->boundaries[row->start_code]->*bc)->desc(d->cellno(row, 0         ), row->dir);
     auto endbc   = (d->boundaries[row->end_code  ]->*bc)->desc(d->cellno(row, row->n - 1), row->dir);
 
-    bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * coeff;
-    phi_row[0] += 2.0 * coeff * startbc.cte;
+    bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * d_row[0] * dt_dx2;
+    phi_row[0] += 2.0 * d_row[0] * dt_dx2 * startbc.cte;
 
-    bb[n - 1] = 1.0 - (2.0 * endbc.sw - 3.0) * coeff;
-    phi_row[n - 1] += 2.0 * coeff * endbc.cte;
+    bb[n - 1] = 1.0 - (2.0 * endbc.sw - 3.0) * d_row[n - 1] * dt_dx2;
+    phi_row[n - 1] += 2.0 * d_row[n - 1] * dt_dx2 * endbc.cte;
 
     solve_tridiagonal_in_place_destructive(phi_row, n, aa, bb, cc);
 
     d->insert_scalars(row, phi, phi_row);
     delete[] phi_row;
+    delete[] d_row;
 
     delete aa;
     delete bb;
@@ -80,7 +82,7 @@ void diffusion::diffuse_ustar()
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
-                diffuse(d->rows[dir] + irow, d->ustar[icmpnt], d->_nu, flowbc::umembers[icmpnt]);
+                diffuse(d->rows[dir] + irow, d->ustar[icmpnt], d->nu, flowbc::umembers[icmpnt]);
 }
 
 }

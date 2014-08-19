@@ -297,11 +297,6 @@ void vof::delete_reconsts()
         }
 }
 
-double vof::rho_bar(double _vof)
-{
-    return _vof * d->_rho + (1.0 - _vof) * d->_rho;
-}
-
 std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3])
 {
     size_t no = d->cellno(row, i);
@@ -357,8 +352,8 @@ void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
     mass[0    ] += vof_start * a * uf_start * d->dt;
     mass[n - 1] -= vof_end   * a * uf_end   * d->dt;
 
-    double rhov_start = rho_bar(vof_start) * a * uf_start * d->dt;
-    double rhov_end   = rho_bar(vof_end  ) * a * uf_end   * d->dt;
+    double rhov_start = d->rho_bar(vof_start) * a * uf_start * d->dt;
+    double rhov_end   = d->rho_bar(vof_end  ) * a * uf_end   * d->dt;
     for (int i = 0; i < 3; ++i)
     {
         rhou[i][0    ] += rhov_start * flowbc::fval_start(d, row, d->u[i], flowbc::umembers[i]);
@@ -401,7 +396,7 @@ void vof::advect()
     for (size_t i = 0; i < d->n; ++i)
     {
         mass[i] = d->vof[i] * vcell;
-        double rhov = (d->vof[i] * d->_rho + (1.0 - d->vof[i]) * d->_rho) * vcell;
+        double rhov = d->rho[i] * vcell;
         rhou[0][i] = rhov * (d->ustar[0][i] = d->u[0][i]);
         rhou[1][i] = rhov * (d->ustar[1][i] = d->u[1][i]);
         rhou[2][i] = rhov * (d->ustar[2][i] = d->u[2][i]);
@@ -433,7 +428,8 @@ void vof::advect()
         for (size_t i = 0; i < d->n; ++i)
         {
             d->vof[i] = mass[i] / vcell;
-            double rhov = rho_bar(d->vof[i]) * vcell;
+            d->rho[i] = d->rho_bar(d->vof[i]);
+            double rhov = d->rho[i] * vcell;
             d->ustar[0][i] = rhou[0][i] / rhov;
             d->ustar[1][i] = rhou[1][i] / rhov;
             d->ustar[2][i] = rhou[2][i] / rhov;

@@ -26,7 +26,7 @@ private:
 public:
     diffusion(domain *_d): d(_d) {}
 
-    void diffuse(mesh_row *row, double *phi, double D, flowbc::member bc);
+    void diffuse(mesh_row *row, double *phi, double* D, flowbc::member bc);
 
     void diffuse_ustar();
 };

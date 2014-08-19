@@ -37,9 +37,11 @@ struct varinfo
 class domain: public mesh
 {
 public:
-    double **uf, * *u, * *ustar, *p, *ls;
+    double **uf, * *u, * *ustar, *p;
+    double rho0, rho1, nu0, nu1;
+    double *rho, *nu;
     double *vof, * *nb;
-    double dt, tend, _rho, _nu;
+    double dt, tend;
     double t;
     vector g;
     int write_interval;
@@ -57,6 +59,9 @@ public:
     size_t *get_row_idxs(mesh_row *row);
     void *create_var(size_t rank);
     static void delete_var(size_t rank, void *v);
+
+    double rho_bar(double _vof);
+    double nu_bar(double _vof);
 
 private:
     void create_vars();

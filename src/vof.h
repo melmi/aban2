@@ -53,7 +53,6 @@ class vof
     void set_normal(size_t i, size_t j, size_t k, size_t no);
     void create_reconsts();
     void delete_reconsts();
-    inline double rho_bar(double _vof);
     inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3]);
     void advect_row(mesh_row *row, double *grad_u_dir[3]);
     void correct_vofs(double* grad_uf_dir);

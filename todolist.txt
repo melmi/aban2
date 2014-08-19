@@ -1,15 +1,13 @@
 Aban 2 To-Do List:
 
   Test Case:
-    ☐ Cavity Flow
     ☐ Dam Break Problem
 
   Flow Solver:
-    ☐ Update the code to use variable density
+    ☐ Implement multiphaze solver
     ☐ Use a vector as delta
 
   Fress Surface:
-    ☐ implement the interface rho*u advection
 
   Software:
     ☐ Accelerate the code by using the restrict keyword
@@ -24,6 +22,9 @@ Aban 2 To-Do List:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+ ✔ Cavity Flow @done (14-08-19 20:18) @project(Aban 2 To-Do List / Test Case)
+ ✔ implement the interface rho*u advection @done (14-08-19 20:17) @project(Aban 2 To-Do List / Fress Surface)
+ ✔ Update the code to use variable density @done (14-08-19 20:17) @project(Aban 2 To-Do List / Flow Solver)
  ✔ Update advection of the volume fraction to use the method of Waymouth and Yue (2010) @done (14-07-05 08:20) @project(Aban 2 To-Do List / Fress Surface)
  ✔ Calculate interface normals using Waymouth and Yue (2010) @done (14-06-25 12:04) @project(Aban 2 To-Do List / Fress Surface)
  ✔ Update the code to use u again (instead of q) @done (14-05-20 17:43) @project(Aban 2 To-Do List / Flow Solver)
