@@ -33,10 +33,9 @@ protected:
     double base_vol;
     vector orig_m;
 
-    double get_correct_moment(size_t dir, double moment); //correct the effect of mirrored axis
     virtual double get_volume(double _alpha) = 0;
     virtual double get_moment(size_t dir) = 0; // respect to cell cornet
-    volreconst *get_remaining(size_t dir, double delta);
+    volreconst *get_cut(size_t dir, double delta);
 public:
     constexpr static const double epsilon = 1e-7;
 

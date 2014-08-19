@@ -66,55 +66,40 @@ void volreconst::set_volume()
     volume = this->get_volume(alpha);
 }
 
-double volreconst::get_correct_moment(size_t dir, double moment)
+volreconst *volreconst::get_cut(size_t dir, double delta)
 {
-    // terms inside double prantheses are distances
-    if (!std::signbit(moment)) return moment;
-
-    return c.x * c.y * c.z * ((c.cmpnt[dir] / 2.0)) -
-           volume * ((-c.cmpnt[dir] + moment / volume));
-}
-
-volreconst *volreconst::get_remaining(size_t dir, double delta)
-{
-    bool cut_from_start = delta * orig_m.cmpnt[dir] < 0.0;
+    bool from_start = (delta * orig_m.cmpnt[dir]) < 0.0;
     delta = std::abs(delta);
 
     vector new_c = c;
-    new_c.cmpnt[dir] -= delta;
+    new_c.cmpnt[dir] = delta;
 
     double new_alpha;
-    if (cut_from_start)
-        new_alpha = alpha - delta * m.cmpnt[dir];
-    else
+    if (from_start)
         new_alpha = alpha;
+    else
+        new_alpha = alpha - delta * m.cmpnt[dir];
 
     return volreconst::from_alpha(new_c, orig_m, new_alpha);
 }
 
 std::tuple<double, vector> volreconst::get_flux(size_t dir, double delta)
 {
-    auto remaining = get_remaining(dir, delta);
-    double v0 = volume, v1 = remaining->volume;
-    vector q0 { this->get_moment(0), this->get_moment(1), this->get_moment(2)};
-    vector q1 { remaining->get_moment(0), remaining->get_moment(1), remaining->get_moment(2)};
-    delete remaining;
+    auto cut = get_cut(dir, delta);
+    double v = cut->volume;
+    vector q { cut->get_moment(0), cut->get_moment(1), cut->get_moment(2)};
+    delete cut;
 
-    // moving q1 to the axis of q0
-    if (delta > 0)
-    {
-        vector d;
-        d.cmpnt[dir] = delta;
-        q1 += v1 * d;
-    }
+    // moving q to the axis of current volume
+    if (delta > 0)q.cmpnt[dir] += v * (c.cmpnt[dir] - delta);
+    // moving q to the axis at cell center
+    q -= (v * 0.5) * c;
+    // projecting q if necessary
+    if (has_elem[0] && orig_m.cmpnt[0] < 0)q.cmpnt[0] *= -1;
+    if (has_elem[1] && orig_m.cmpnt[1] < 0)q.cmpnt[1] *= -1;
+    if (has_elem[2] && orig_m.cmpnt[2] < 0)q.cmpnt[2] *= -1;
 
-    double vf = v0 - v1;
-    vector qf = q0 - q1;
-
-    // moving qf to the axis at cell center
-    qf += (vf * 0.5) * c;
-
-    return std::make_tuple(vf, qf);
+    return std::make_tuple(v, q);
 }
 
 volreconst *volreconst::from_volume(vector c, vector m, double volume)
@@ -148,21 +133,18 @@ double volreconst1d::get_moment(size_t dir)
     // terms inside double prantheses are distances
     if (!has_elem[dir])return volume * ((c.cmpnt[dir] / 2.0));
 
-    double result = volume * ((alpha / 2.0));
-    return get_correct_moment(dir, result);
+    return volume * ((alpha / 2.0));
 }
 
 /******************** volreconst2d ********************/
 
 double volreconst2d::x2(double x)
 {
-    if (x < 0.0)return 0.0;
-    return x * x;
+    return x < 0 ? 0 : x * x;
 }
 
 double volreconst2d::get_volume(double _alpha)
 {
-    if (_alpha < 0)return 0;
     if (_alpha > alpha_max) return c.x * c.y * c.z;
 
     double result = x2(_alpha);
@@ -187,23 +169,21 @@ double volreconst2d::get_moment(size_t dir)
         {
             double d1 = i == dir ? c.cmpnt[i] : 0;
             double r1 = alpha - m.cmpnt[i] * c.cmpnt[i];
-            result -= x2(r1) * ((d1 + r1 / m.cmpnt[i]  / 3.0));
+            result -= x2(r1) * ((d1 + r1 / m.cmpnt[dir]  / 3.0));
         }
     result *= base_vol;
-    return get_correct_moment(dir, result);
+    return result;
 }
 
 /******************** volreconst3d ********************/
 
 double volreconst3d::x3(double x)
 {
-    if (x < 0)return 0;
-    return x * x * x;
+    return x < 0 ? 0 : x * x * x;
 }
 
 double volreconst3d::get_volume(double _alpha)
 {
-    if (_alpha < 0)return 0;
     if (_alpha > alpha_max) return c.x * c.y * c.z;
 
     double result = x3(_alpha);
@@ -229,15 +209,15 @@ double volreconst3d::get_moment(size_t dir)
     {
         double d1 = i == dir ? c.cmpnt[i] : 0;
         double r1 = alpha - m.cmpnt[i] * c.cmpnt[i];
-        result -= x3(r1) * ((d1 + r1 / m.cmpnt[i] / 3.0));
+        result -= x3(r1) * ((d1 + r1 / m.cmpnt[dir] / 3.0));
 
         double d2 = i == dir ? 0 : c.cmpnt[i];
         double r2 = alpha - alpha_max + m.cmpnt[i] * c.cmpnt[i];
-        result += x3(r2) * ((d2 + r2 / m.cmpnt[i] / 3.0));
+        result += x3(r2) * ((d2 + r2 / m.cmpnt[dir] / 3.0));
     }
 
     result *= base_vol;
-    return get_correct_moment(dir, result);
+    return result;
 }
 
 }
