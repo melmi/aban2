@@ -372,11 +372,11 @@ void vof::advect_row(mesh_row *row, double ***grad_ustar)
         }
     }
 
-    double uf_start = flowbc::fval_start(d, row, d->u[row->dir], flowbc::umembers[row->dir]);
-    double uf_end   = flowbc::fval_end  (d, row, d->u[row->dir], flowbc::umembers[row->dir]);
+    double uf_start = flowbc::bc_u_getter[row->dir](d, row,d->u[row->dir], bcside::start);
+    double uf_end   = flowbc::bc_u_getter[row->dir](d, row,d->u[row->dir], bcside::end);
 
-    double vof_start = flowbc::fval_start(d, row, d->vof, &flowbc::vof);
-    double vof_end   = flowbc::fval_end  (d, row, d->vof, &flowbc::vof);
+    double vof_start = flowbc::bc_vof_getter(d, row, d->vof, bcside::start);
+    double vof_end   = flowbc::bc_vof_getter(d, row, d->vof, bcside::end);
 
     mass[0    ] += vof_start * a * uf_start * d->dt;
     mass[n - 1] -= vof_end   * a * uf_end   * d->dt;
@@ -385,8 +385,8 @@ void vof::advect_row(mesh_row *row, double ***grad_ustar)
     double rhov_end   = d->rho_bar(vof_end  ) * a * uf_end   * d->dt;
     for (int i = 0; i < 3; ++i)
     {
-        rhou[i][0    ] += rhov_start * flowbc::fval_start(d, row, d->u[i], flowbc::umembers[i]);
-        rhou[i][n - 1] -= rhov_end   * flowbc::fval_end  (d, row, d->u[i], flowbc::umembers[i]);
+        rhou[i][0    ] += rhov_start * flowbc::bc_u_getter[i](d, row, d->u[i], bcside::start);
+        rhou[i][n - 1] -= rhov_end   * flowbc::bc_u_getter[i](d, row, d->u[i], bcside::end);
     }
 
     d->insert_scalars(row, mass, row_mass);
@@ -442,7 +442,7 @@ void vof::advect()
 
         size_t dir = (start_dir + idir) % NDIRS;
 
-        double ***grad_ustar = gradient::of_vec(d, d->ustar, flowbc::umembers);
+        double ***grad_ustar = gradient::of_vec(d, d->ustar, flowbc::bc_u_getter);
 
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             advect_row(d->rows[dir] + irow, grad_ustar);

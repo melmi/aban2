@@ -63,7 +63,7 @@ void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
 
 double *projection::get_rhs()
 {
-    auto rhs = gradient::divergance(d, d->ustar, flowbc::umembers);
+    auto rhs = gradient::divergance(d, d->ustar, flowbc::bc_u_getter);
     for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
@@ -113,7 +113,7 @@ void projection::solve_p()
 
 void projection::update_u()
 {
-    double **gradp = gradient::of_scalar(d, d->p, &flowbc::p);
+    double **gradp = gradient::of_scalar(d, d->p, flowbc::bc_p_getter);
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)

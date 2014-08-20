@@ -41,7 +41,7 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(mesh_row *row, double *phi, double *D, flowbc::member bc)
+void diffusion::diffuse(mesh_row *row, double *phi, double *D, flowbc::member mem)
 {
     double *phi_row = d->extract_scalars(row, phi);
     double *d_row = d->extract_scalars(row, D);
@@ -57,8 +57,8 @@ void diffusion::diffuse(mesh_row *row, double *phi, double *D, flowbc::member bc
         bb[i] = 1.0 + 2.0 * d_row[i] * dt_dx2;
     }
 
-    auto startbc = (d->boundaries[row->start_code]->*bc)->desc(d->cellno(row, 0         ), row->dir);
-    auto endbc   = (d->boundaries[row->end_code  ]->*bc)->desc(d->cellno(row, row->n - 1), row->dir);
+    auto startbc = (d->boundaries[row->start_code]->*mem)->desc(d->cellno(row, 0         ), row->dir);
+    auto endbc   = (d->boundaries[row->end_code  ]->*mem)->desc(d->cellno(row, row->n - 1), row->dir);
 
     bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * d_row[0] * dt_dx2;
     phi_row[0] += 2.0 * d_row[0] * dt_dx2 * startbc.cte;

@@ -10,6 +10,8 @@
 #include "domain.h"
 #include "vector.h"
 
+using namespace std::placeholders;
+
 namespace aban2
 {
 
@@ -75,8 +77,6 @@ public:
 
 //////////////////////////  flow_bcondition
 
-flowbc::member flowbc::umembers[3] {&flowbc::u0, &flowbc::u1, &flowbc::u2};
-
 void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
 {
     auto bnames = bcroot->getMemberNames();
@@ -124,18 +124,30 @@ flowbc::~flowbc()
     delete vof;
 }
 
-double flowbc::fval_start(domain *d, mesh_row *row, double *phi, flowbc::member bcmember)
+double face_val(domain *d, mesh_row *row, double *phi, flowbc::member mem, bcside side)
 {
-    auto bc = d->boundaries[row->start_code]->*bcmember;
-    auto cellno = d->cellno(row, 0);
-    return bc->face_val(cellno, row->dir, phi, -d->delta / 2);
+    if (side == bcside::start)
+    {
+        auto bc = d->boundaries[row->start_code]->*mem;
+        auto cellno = d->cellno(row, 0);
+        return bc->face_val(cellno, row->dir, phi, -d->delta / 2);
+    }
+    else
+    {
+        auto bc = d->boundaries[row->end_code]->*mem;
+        auto cellno = d->cellno(row, row->n - 1);
+        return bc->face_val(cellno, row->dir, phi, +d->delta / 2);
+    }
 }
 
-double flowbc::fval_end  (domain *d, mesh_row *row, double *phi, flowbc::member bcmember)
+flowbc::member flowbc::umembers[3] {&flowbc::u0, &flowbc::u1, &flowbc::u2};
+flowbc::bc_val_getter flowbc::bc_p_getter = std::bind(face_val, _1, _2, _3, &flowbc::p, _4);
+flowbc::bc_val_getter flowbc::bc_vof_getter = std::bind(face_val, _1, _2, _3, &flowbc::vof, _4);
+flowbc::bc_val_getter flowbc::bc_u_getter[3] =
 {
-    auto bc = d->boundaries[row->end_code]->*bcmember;
-    auto cellno = d->cellno(row, row->n - 1);
-    return bc->face_val(cellno, row->dir, phi, +d->delta / 2);
-}
+    std::bind(face_val, _1, _2, _3, &flowbc::u0, _4),
+    std::bind(face_val, _1, _2, _3, &flowbc::u1, _4),
+    std::bind(face_val, _1, _2, _3, &flowbc::u2, _4)
+};
 
 }

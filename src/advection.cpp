@@ -15,7 +15,7 @@
 namespace aban2
 {
 
-void advection::advect(mesh_row *row, double *phi, double *grad_dir, flowbc::member bc)
+void advection::advect(mesh_row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc)
 {
     double flux;
     double dx = d->delta, dt = d->dt;
@@ -40,11 +40,11 @@ void advection::advect(mesh_row *row, double *phi, double *grad_dir, flowbc::mem
         mass[ii] += flux;
     }
 
-    double uf_start = flowbc::fval_start(d, row, d->u[row->dir], flowbc::umembers[row->dir]);
-    double uf_end   = flowbc::fval_end  (d, row, d->u[row->dir], flowbc::umembers[row->dir]);
+    double uf_start = flowbc::bc_u_getter[row->dir](d, row, d->u[row->dir], bcside::start);
+    double uf_end   = flowbc::bc_u_getter[row->dir](d, row, d->u[row->dir], bcside::end);
 
-    mass[0    ] += flowbc::fval_start(d, row, phi, bc) * uf_start * dt;
-    mass[n - 1] -= flowbc::fval_end  (d, row, phi, bc) * uf_end   * dt;
+    mass[0    ] += bc(d, row, phi, bcside::start) * uf_start * dt;
+    mass[n - 1] -= bc(d, row, phi, bcside::end  ) * uf_end   * dt;
 
     for (size_t i = 0; i < n; ++i) phi_row[i] = mass[i] / dx;
 
@@ -64,12 +64,12 @@ void advection::advect_ustar()
             double *grad_dir = gradient::of_scalar_dir_oriented(
                                    d,
                                    d->ustar[icmpnt],
-                                   flowbc::umembers[icmpnt],
+                                   flowbc::bc_u_getter[icmpnt],
                                    dir);
             for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             {
                 mesh_row *row = d->rows[dir] + irow;
-                advect(row, d->ustar[icmpnt], grad_dir, flowbc::umembers[icmpnt]);
+                advect(row, d->ustar[icmpnt], grad_dir, flowbc::bc_u_getter[icmpnt]);
             }
             delete[] grad_dir;
         }
