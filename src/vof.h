@@ -53,9 +53,9 @@ class vof
     void set_normal(size_t i, size_t j, size_t k, size_t no);
     void create_reconsts();
     void delete_reconsts();
-    inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3]);
-    void advect_row(mesh_row *row, double *grad_u_dir[3]);
-    void correct_vofs(double* grad_uf_dir);
+    inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar);
+    void advect_row(mesh_row *row, double ***grad_ustar);
+    void correct_vofs(double *grad_uf_dir);
 public:
     vof(domain *_d);
     ~vof();

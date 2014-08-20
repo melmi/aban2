@@ -297,21 +297,50 @@ void vof::delete_reconsts()
         }
 }
 
-std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, double *grad_u_dir[3])
+std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar)
 {
     size_t no = d->cellno(row, i);
+    double v0, v1, vt, c;
+    vector q0, q1, qt;
+
+    vt = d->delta * d->delta * std::abs(udt);
+    c = ((udt > 0 ? 1.0 : -1.0) * d->delta - udt) / 2.0;
+    qt.cmpnt[row->dir] = vt * c;
 
     if (on_interface[no])
+        std::tie(v1, q1) = reconsts[no]->get_flux(row->dir, udt);
+    else
     {
-        auto result = reconsts[no]->get_flux(row->dir, udt);
-        return result;
+        if (fullnesses[no] == fullness::full)
+        {
+            v1 = vt;
+            q1 = qt;
+        }
+        else
+        {
+            v1 = 0;
+            // q1={0,0,0}; // default
+        }
     }
+
+    v0 = vt - v1;
+    q0 = qt - q1;
+
+    vector ustar = vector::from_data(d->ustar, no);
+    vector grad[]
     {
-        return std::make_tuple(fullnesses[no] == fullness::empty ? 0 : d->delta * d->delta * std::abs(udt), vector());
-    }
+        vector::from_data(grad_ustar[0], no),
+        vector::from_data(grad_ustar[1], no),
+        vector::from_data(grad_ustar[2], no)
+    };
+
+    vector flux_ustar0 = d->rho0 * (ustar * d->rho0 + vector(q0 * grad[0], q0 * grad[1], q0 * grad[2]));
+    vector flux_ustar1 = d->rho1 * (ustar * d->rho1 + vector(q1 * grad[0], q1 * grad[1], q1 * grad[2]));
+
+    return std::make_tuple(v1, flux_ustar0 + flux_ustar1);
 }
 
-void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
+void vof::advect_row(mesh_row *row, double ***grad_ustar)
 {
     std::tuple<double, vector> flux;
     size_t n = row->n;
@@ -331,7 +360,7 @@ void vof::advect_row(mesh_row *row, double *grad_u_dir[3])
         size_t from, to;
         if (udt > 0)to = (from = face) + 1; else from = (to = face) + 1;
 
-        flux = get_flux(row, from, udt, grad_u_dir);
+        flux = get_flux(row, from, udt, grad_ustar);
 
         row_mass[from] -= std::get<0>(flux);
         row_mass[to]   += std::get<0>(flux);
@@ -413,15 +442,10 @@ void vof::advect()
 
         size_t dir = (start_dir + idir) % NDIRS;
 
-        double *grad_u_dir[3]
-        {
-            gradient::of_scalar_dir_oriented(d, d->ustar[0], flowbc::umembers[0], dir),
-            gradient::of_scalar_dir_oriented(d, d->ustar[1], flowbc::umembers[1], dir),
-            gradient::of_scalar_dir_oriented(d, d->ustar[2], flowbc::umembers[2], dir)
-        };
+        double ***grad_ustar = gradient::of_vec(d, d->ustar, flowbc::umembers);
 
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
-            advect_row(d->rows[dir] + irow, grad_u_dir);
+            advect_row(d->rows[dir] + irow, grad_ustar);
 
         correct_vofs(grad_uf[dir][dir]);
 
@@ -435,7 +459,7 @@ void vof::advect()
             d->ustar[2][i] = rhou[2][i] / rhov;
         }
 
-        for (int i = 0; i < 3; ++i) delete[] grad_u_dir[i];
+        domain::delete_var(3, grad_ustar);
     }
 
     domain::delete_var(3, grad_uf);
