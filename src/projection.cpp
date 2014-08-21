@@ -63,7 +63,12 @@ void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
 
 double *projection::get_rhs()
 {
-    auto rhs = gradient::divergance(d, d->ustar, flowbc::bc_u_getter);
+    double **rhou = (double **)d->create_var(2);
+    for (int i = 0; i < d->n; ++i)
+        for (size_t dir = 0; dir < NDIRS; ++dir)
+            rhou[dir][i] = d->rho[i] * d->ustar[dir][i];
+    auto rhs = gradient::divergance(d, d->ustar, flowbc::bc_rhou_getter);
+    domain::delete_var(2, rhou);
     for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
@@ -117,7 +122,7 @@ void projection::update_u()
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt / d->rho[i];
+            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt;
 
     d->delete_var(2, gradp);
 }

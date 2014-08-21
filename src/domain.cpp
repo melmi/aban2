@@ -55,9 +55,9 @@ void domain::register_vars()
 {
     varlist.push_back(varinfo("p", 1, true, &p));
     varlist.push_back(varinfo("u", 2, true, &u));
-    varlist.push_back(varinfo("ustar", 2, false, &ustar));
-    varlist.push_back(varinfo("rho", 2, false, &rho));
-    varlist.push_back(varinfo("nu", 2, false, &nu));
+    varlist.push_back(varinfo("ustar", 2, true, &ustar));
+    varlist.push_back(varinfo("rho", 1, false, &rho));
+    varlist.push_back(varinfo("nu", 1, false, &nu));
     varlist.push_back(varinfo("uf", 2, false, &uf));
 
     varlist.push_back(varinfo("vof", 1, true, &vof));

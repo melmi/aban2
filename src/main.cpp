@@ -18,16 +18,12 @@ using namespace aban2;
 int main(int argc, char const *argv[])
 {
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    // square(d, {50, 75, 0}, 10);
-    circle(d, {50, 75, 0}, 15);
-    vortex(d, {50, 50, 0}, 0.01);
-    vof vofc(d);
-    for (int i = 0; i < 650; ++i)
-    {
-        std::cout << "time step: " << i << std::endl;
-        d->write_vtk("out/vof" + to_string(i) + ".vtk");
-        vofc.advect();
-    }
+    std::fill_n(d->vof, d->n, 1.0);
+    std::fill_n(d->rho, d->n, d->rho1);
+    std::fill_n(d->nu, d->n, d->nu1);
+    std::cout << "before run" << std::endl << std::flush;
+    solver s(d, "out/cav");
+    s.run(10000);
 
     delete d;
     return 0;
