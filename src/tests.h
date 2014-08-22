@@ -8,6 +8,7 @@
 #ifndef _TESTS_H_
 #define _TESTS_H_
 
+#include "common.h"
 #include <iostream>
 #include <cmath>
 #include <sstream>
@@ -190,7 +191,7 @@ void vof_reconst_accuracy_test()
         circle(d, {0.5, 0.5, 0}, 0.30);
         vof vofc(d);
         cout << "calculating normals" << endl;
-        vofc.calculate_normals();
+        //vofc.calculate_normals();
         cout << "writing" << endl;
         // if (first)
         //     d->write_vtk("out/my-method.vtk");
@@ -201,6 +202,30 @@ void vof_reconst_accuracy_test()
     }
 
     cout << "done" << endl;
+}
+
+void zalesak_disk(domain *);
+
+void zalesak_disk_rotation_test()
+{
+    domain *d = domain::create_from_file("mesh/cavity100x100.json");
+    vof _vof(d);
+    vortex(d, {50, 50, 0}, 0.01);
+    zalesak_disk(d);
+
+    d->write_vtk("out/zalesak0.vtk");
+    for (int i = 0; i < 700; ++i)
+    {
+        std::cout << "step " << i + 1 << std::endl << std::flush;
+        _vof.advect();
+
+        stringstream ss;
+        ss << "out/zalesak" << i + 1 << ".vtk";
+        d->write_vtk(ss.str());
+    }
+
+
+    delete d;
 }
 
 //-------------------------- vof shapes
@@ -215,19 +240,15 @@ void circle(domain *d, vector x0, double r)
     // creating circle
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
-            if (d->exists_and_inside(i, j, 0, no))
+            if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *(i - 0.5), d->delta *(j - 0.5), 0};
+                vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
                 vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
                 double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
 
                 vector n = x - x0;
                 n.normalize();
                 n.to_data(d->u, no);
-
-                size_t idx = min_element_index(l2, l2 + 4);
-                double alpha = r - ps[idx] * n;
-                d->p[no] = alpha;
 
                 if (*std::min_element(begin(l2), end(l2)) > r2)
                 {
@@ -240,64 +261,59 @@ void circle(domain *d, vector x0, double r)
                     continue;
                 }
 
+                size_t idx = min_element_index(l2, l2 + 4);
+                double alpha = r - ps[idx] * n;
                 volreconst *reconst = volreconst::from_alpha(h, n, alpha);
                 d->vof[no] = reconst->volume / v;
                 delete reconst;
             }
 }
 
-void zalesak_disk(domain *d)
+void rectangel(domain *d, vector c, vector l, double value)
 {
-    circle(d, {50, 75, 0}, 15);
+    double h_2 = d->delta / 2.0;
+    size_t no;
 
-    //removing slot
-    double eps = 1e-4;
-    vector c {50, 72.5, 0}, l {5 + eps, 25 + eps, 0};
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta * i, d->delta * j, 0};
-            if (
-                (x.x > c.x - l.x / 2.0) &&
-                (x.x < c.x + l.x / 2.0) &&
-                (x.y > c.y - l.y / 2.0) &&
-                (x.y < c.y + l.y / 2.0))
-                d->vof[ix] = 0;
-        }
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->exists(i, j, 0, no))
+            {
+                vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+                if (
+                    (x.x > c.x - l.x / 2.0) &&
+                    (x.x < c.x + l.x / 2.0) &&
+                    (x.y > c.y - l.y / 2.0) &&
+                    (x.y < c.y + l.y / 2.0))
+                    d->vof[no] = value;
+            }
 }
 
 void square(domain *d, vector c, double a)
 {
-    //square
-    double eps = 1e-4;
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta * i, d->delta * j, 0};
-            if (    (x.x + eps > c.x - a / 2.0) &&
-                    (x.x - eps < c.x + a / 2.0) &&
-                    (x.y + eps > c.y - a / 2.0) &&
-                    (x.y - eps < c.y + a / 2.0))
-                d->vof[ix] = 1;
-        }
+    rectangel(d, c, {a, a, a}, 1);
+}
+
+void zalesak_disk(domain *d)
+{
+    circle(d, {50, 75, 0}, 15);
+    rectangel(d, {50, 72.5, 0}, {5 , 25 , 0}, 0);
 }
 
 //-------------------------- velocity fields
 
 void vortex(domain *d, vector x0, double omega)
 {
+    size_t no;
     double h_2 = d->delta / 2.0;
-    for (size_t j = 0; j < d->ndir[1]; ++j)
-        for (size_t i = 0; i < d->ndir[0]; ++i)
-        {
-            size_t ix = d->cellnos[d->idx(i, j, 0)];
-            vector x {d->delta *i + h_2, d->delta *j + h_2, 0}; // interface u is a half cell staggered
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->exists(i, j, 0, no))
+            {
+                vector x {d->delta *(i + 1), d->delta *(j + 1), 0};
 
-            d->uf[0][ix] = omega * (x0.y - x.y);
-            d->uf[1][ix] = omega * (x.x - x0.x);
-        }
+                d->uf[0][no] = omega * (x0.y - x.y);
+                d->uf[1][no] = omega * (x.x - x0.x);
+            }
 }
 
 }
