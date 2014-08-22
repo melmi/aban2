@@ -6,8 +6,10 @@
  */
 
 #include "solver.h"
+#include "gradient.h"
 
 #include <iostream>
+#include <iomanip>
 
 namespace aban2
 {
@@ -22,14 +24,14 @@ void solver::write_step(size_t step)
 solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
     projector = new projection(d);
-    advector = new advection(d);
+    _vof = new vof(d);
     diffusor = new diffusion(d);
 }
 
 solver::~solver()
 {
     delete projector;
-    delete advector;
+    delete _vof;
     delete diffusor;
 }
 
@@ -39,7 +41,7 @@ void solver::step()
         std::copy_n(d->u[i], d->n, d->ustar[i]);
 
     std::cout << "      advection " << std::endl;
-    advector->advect_ustar();
+    _vof->advect();
     std::cout << "      diffusion " << std::endl;
     diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
@@ -50,8 +52,28 @@ void solver::step()
     projector->update_u();
     std::cout << "      calculating uf " << std::endl;
     projector->update_uf();
+    std::cout << std::scientific
+              << "      divergance: " << divergance()
+              << std::endl;
 
     d->t += d->dt;
+}
+
+double solver::divergance()
+{
+    auto grad_uf = gradient::of_uf(d);
+
+    double result = 0;
+    for (int i = 0; i < d->n; ++i)
+    #ifdef THREE_D
+        result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i] + grad_uf[2][2][i]);
+    #else
+        result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i]);
+    #endif
+
+    domain::delete_var(2, grad_uf);
+
+    return result;
 }
 
 void solver::run(double tend)

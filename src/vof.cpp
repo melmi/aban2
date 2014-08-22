@@ -93,18 +93,18 @@ vof::neighbs_t vof::get_nighb_vals(size_t i, size_t j, size_t k)
 
     for (int ii = 0; ii < 3; ++ii)
         for (int jj = 0; jj < 3; ++jj)
-#ifdef THREE_D
+        #ifdef THREE_D
             for (int kk = 0; kk < 3; ++kk)
                 if (d->exists_and_inside(i + ii - 1, j + jj - 1, k + kk - 1, no))
                     result[ii][jj][kk] = d->vof[no];
                 else
                     result[ii][jj][kk] = -1;
-#else
+        #else
             if (d->exists_and_inside(i + ii - 1, j + jj - 1, k, no))
                 result[ii][jj][0] = result[ii][jj][1] = result[ii][jj][2] = d->vof[no];
             else
                 result[ii][jj][0] = result[ii][jj][1] = result[ii][jj][2] = -1;
-#endif
+        #endif
 
     return result;
 }
@@ -331,11 +331,15 @@ std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, do
     {
         vector::from_data(grad_ustar[0], no),
         vector::from_data(grad_ustar[1], no),
+        #ifdef THREE_D
         vector::from_data(grad_ustar[2], no)
+        #else
+        vector()
+        #endif
     };
 
-    vector flux_ustar0 = d->rho0 * (ustar * d->rho0 + vector(q0 * grad[0], q0 * grad[1], q0 * grad[2]));
-    vector flux_ustar1 = d->rho1 * (ustar * d->rho1 + vector(q1 * grad[0], q1 * grad[1], q1 * grad[2]));
+    vector flux_ustar0 = d->rho0 * (ustar * v0 + vector(q0 * grad[0], q0 * grad[1], q0 * grad[2]));
+    vector flux_ustar1 = d->rho1 * (ustar * v1 + vector(q1 * grad[0], q1 * grad[1], q1 * grad[2]));
 
     return std::make_tuple(v1, flux_ustar0 + flux_ustar1);
 }
@@ -372,8 +376,8 @@ void vof::advect_row(mesh_row *row, double ***grad_ustar)
         }
     }
 
-    double uf_start = flowbc::bc_u_getter[row->dir](d, row,d->u[row->dir], bcside::start);
-    double uf_end   = flowbc::bc_u_getter[row->dir](d, row,d->u[row->dir], bcside::end);
+    double uf_start = flowbc::bc_u_getter[row->dir](d, row, d->u[row->dir], bcside::start);
+    double uf_end   = flowbc::bc_u_getter[row->dir](d, row, d->u[row->dir], bcside::end);
 
     double vof_start = flowbc::bc_vof_getter(d, row, d->vof, bcside::start);
     double vof_end   = flowbc::bc_vof_getter(d, row, d->vof, bcside::end);
@@ -390,6 +394,9 @@ void vof::advect_row(mesh_row *row, double ***grad_ustar)
     }
 
     d->insert_scalars(row, mass, row_mass);
+    // d->insert_scalars(row, rhou[0], row_rhou[0]);
+    // d->insert_scalars(row, rhou[1], row_rhou[1]);
+    // d->insert_scalars(row, rhou[2], row_rhou[2]);
 
     delete[] uf;
     delete[] row_mass;
@@ -403,7 +410,7 @@ void vof::correct_vofs(double *grad_uf_dir)
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
         if (d->vof[i] > 0.5)
-            mass[i] += grad_uf_dir[i] * vcell;
+            mass[i] += grad_uf_dir[i] * vcell * d->dt;
 }
 
 void vof::calculate_normals()
@@ -426,9 +433,9 @@ void vof::advect()
     {
         mass[i] = d->vof[i] * vcell;
         double rhov = d->rho[i] * vcell;
-        rhou[0][i] = rhov * (d->ustar[0][i] = d->u[0][i]);
-        rhou[1][i] = rhov * (d->ustar[1][i] = d->u[1][i]);
-        rhou[2][i] = rhov * (d->ustar[2][i] = d->u[2][i]);
+        rhou[0][i] = rhov * d->ustar[0][i];
+        rhou[1][i] = rhov * d->ustar[1][i];
+        rhou[2][i] = rhov * d->ustar[2][i];
     }
 
     start_dir = (start_dir + 1) % NDIRS;

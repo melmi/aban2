@@ -8,6 +8,7 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
+#include "common.h"
 #include <ostream>
 
 namespace aban2

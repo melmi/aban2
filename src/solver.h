@@ -11,8 +11,9 @@
 #include <algorithm>
 #include <sstream>
 
+#include "common.h"
 #include "domain.h"
-#include "advection.h"
+#include "vof.h"
 #include "diffusion.h"
 #include "projection.h"
 
@@ -24,11 +25,12 @@ class solver
 private:
     domain *d;
     projection *projector;
-    advection *advector;
+    vof *_vof;
     diffusion *diffusor;
     std::string out_path;
 
     void apply_source_terms();
+    double divergance();
 public:
     solver(domain *_d, std::string _out_path);
     ~solver();

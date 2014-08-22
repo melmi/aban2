@@ -8,19 +8,13 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include "common.h"
 #include <jsoncpp/json/json.h>
 #include <string>
 #include <cstring>
 #include <fstream>
 #include <list>
 #include "vector.h"
-
-//#define THREE_D
-#ifdef THREE_D
-#define NDIRS 3
-#else
-#define NDIRS 2
-#endif
 
 namespace aban2
 {

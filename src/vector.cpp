@@ -6,6 +6,7 @@
  */
 
 #include "vector.h"
+#include "common.h"
 #include <cmath>
 
 namespace aban2
@@ -21,14 +22,20 @@ vector::vector(double _x, double _y, double _z): x(_x), y(_y), z(_z)
 
 vector vector::from_data(double **data, size_t i)
 {
+#ifdef THREE_D
     return vector(data[0][i], data[1][i], data[2][i]);
+#else
+    return vector(data[0][i], data[1][i], 0);
+#endif
 }
 
 void vector::to_data(double **data, size_t i) const
 {
     data[0][i] = x;
     data[1][i] = y;
+#ifdef THREE_D
     data[2][i] = z;
+#endif
 }
 
 vector vector::operator*(double r) const
@@ -113,9 +120,9 @@ vector operator*(double r, const vector v)
     return v * r;
 }
 
-std::ostream& operator<< (std::ostream &out, vector v)
+std::ostream &operator<< (std::ostream &out, vector v)
 {
-    out << "(" 
+    out << "("
         << v.x << ", "
         << v.y << ", "
         << v.z << ")";

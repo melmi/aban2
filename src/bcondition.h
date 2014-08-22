@@ -8,6 +8,7 @@
 #ifndef _BCONDITION_H_
 #define _BCONDITION_H_
 
+#include "common.h"
 #include <jsoncpp/json/json.h>
 #include "vector.h"
 #include <functional>

@@ -8,6 +8,7 @@
 #ifndef _DIFFUSION_H_
 #define _DIFFUSION_H_
 
+#include "common.h"
 #include <algorithm>
 
 #include "domain.h"

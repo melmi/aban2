@@ -8,6 +8,7 @@
 #ifndef _PROJECTION_H_
 #define _PROJECTION_H_
 
+#include "common.h"
 #include <vector>
 #include <algorithm>
 #include <seldon-5.2/Seldon.hxx>

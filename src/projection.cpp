@@ -67,7 +67,7 @@ double *projection::get_rhs()
     for (int i = 0; i < d->n; ++i)
         for (size_t dir = 0; dir < NDIRS; ++dir)
             rhou[dir][i] = d->rho[i] * d->ustar[dir][i];
-    auto rhs = gradient::divergance(d, d->ustar, flowbc::bc_rhou_getter);
+    auto rhs = gradient::divergance(d, rhou, flowbc::bc_rhou_getter);
     domain::delete_var(2, rhou);
     for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
@@ -122,7 +122,7 @@ void projection::update_u()
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
-            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt;
+            d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt / d->rho[i];
 
     d->delete_var(2, gradp);
 }
@@ -136,16 +136,18 @@ void projection::update_uf()
 
             double *ustar = d->extract_scalars(row, d->ustar[idir]);
             double *p = d->extract_scalars(row, d->p);
+            double *rho = d->extract_scalars(row, d->rho);
             double *uf = new double[row->n];
 
             for (size_t i = 0; i < row->n - 1; ++i)
-                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 - (p[i + 1] - p[i]) / d->delta;
+                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 - (p[i + 1] - p[i]) / d->delta * d->dt / rho[i];
 
             d->insert_scalars(row, d->uf[idir], uf);
 
             delete[] ustar;
             delete[] p;
             delete[] uf;
+            delete[] rho;
         }
 }
 

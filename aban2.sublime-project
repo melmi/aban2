@@ -15,7 +15,8 @@
 		
 			"options_default":
 			{
-					"keep-one-line-blocks": true
+					"keep-one-line-blocks": true,
+					"indent-preproc-cond": true
 			}
 		}
 	}

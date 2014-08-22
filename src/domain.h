@@ -8,6 +8,7 @@
 #ifndef _DOMAIN_H_
 #define _DOMAIN_H_
 
+#include "common.h"
 #include <jsoncpp/json/json.h>
 #include <list>
 #include <fstream>

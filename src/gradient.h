@@ -8,6 +8,7 @@
 #ifndef _GRADIENT_H_
 #define _GRADIENT_H_
 
+#include "common.h"
 #include "domain.h"
 #include <algorithm>
 #include "bcondition.h"

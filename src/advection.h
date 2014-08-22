@@ -8,6 +8,7 @@
 #ifndef _ADVECTION_H_
 #define _ADVECTION_H_
 
+#include "common.h"
 #include "bcondition.h"
 
 namespace aban2
