@@ -394,9 +394,9 @@ void vof::advect_row(mesh_row *row, double ***grad_ustar)
     }
 
     d->insert_scalars(row, mass, row_mass);
-    // d->insert_scalars(row, rhou[0], row_rhou[0]);
-    // d->insert_scalars(row, rhou[1], row_rhou[1]);
-    // d->insert_scalars(row, rhou[2], row_rhou[2]);
+    d->insert_scalars(row, rhou[0], row_rhou[0]);
+    d->insert_scalars(row, rhou[1], row_rhou[1]);
+    d->insert_scalars(row, rhou[2], row_rhou[2]);
 
     delete[] uf;
     delete[] row_mass;
