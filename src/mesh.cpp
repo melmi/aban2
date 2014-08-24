@@ -42,7 +42,7 @@ bool mesh::exists(size_t i, size_t j, size_t k, size_t &no)
 
 bool mesh::exists_and_inside(size_t i, size_t j, size_t k, size_t &no)
 {
-    if (i < 0 || i > ndir[0] || j < 0 || j > ndir[1] || k < 0 || k > ndir[2]) return false;
+    if (i < 0 || i >= ndir[0] || j < 0 || j >= ndir[1] || k < 0 || k >= ndir[2]) return false;
     size_t ix = idx(i, j, k);
     if (codes[ix] != INSIDE)return false;
     no = cellnos[ix];
