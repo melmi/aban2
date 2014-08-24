@@ -39,7 +39,6 @@ double *gradient::of_scalar_dir_oriented(domain *d, double *phi, flowbc::bc_val_
     return result;
 }
 
-
 double **gradient::of_scalar(domain *d, double *phi, flowbc::bc_val_getter bc)
 {
     double **result = new double*[3];
