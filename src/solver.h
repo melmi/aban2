@@ -37,7 +37,7 @@ public:
 
     void write_step(size_t step);
     void step();
-    void run(double tend);
+    void run(size_t nsteps);
 };
 
 }

@@ -40,14 +40,22 @@ void solver::step()
     for (int i = 0; i < NDIRS; ++i)
         std::copy_n(d->u[i], d->n, d->ustar[i]);
 
+    double *drho_dt = new double[d->n];
+    std::copy_n(d->rho, d->n, drho_dt);
+
     std::cout << "      advection " << std::endl;
     _vof->advect();
+    for (int i = 0; i < d->n; ++i)
+    {
+        d->nu[i] = d->nu_bar(d->vof[i]);
+        drho_dt[i] = (drho_dt[i] - d->rho[i]) / d->dt;
+    }
     std::cout << "      diffusion " << std::endl;
     diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
     apply_source_terms();
     std::cout << "      pressure " << std::endl;
-    projector->solve_p();
+    projector->solve_p(drho_dt);
     std::cout << "      updating " << std::endl;
     projector->update_u();
     std::cout << "      calculating uf " << std::endl;
@@ -56,6 +64,7 @@ void solver::step()
               << "      divergance: " << divergance()
               << std::endl;
 
+    delete[] drho_dt;
     d->t += d->dt;
 }
 
@@ -76,10 +85,9 @@ double solver::divergance()
     return result;
 }
 
-void solver::run(double tend)
+void solver::run(size_t nsteps)
 {
     write_step(0);
-    size_t nsteps = (tend - d->t) / d->dt;
 
     for (int it = 0; it < nsteps; ++it)
     {

@@ -36,11 +36,11 @@ private:
     void add_row(mesh_row *row);
     void apply_row_bc(size_t ix0, size_t ix1, bcdesc desc);
 
-    double *get_rhs();
+    double *get_rhs(double *drho_dt);
     void apply_rhs_bc(double *rhs);
 
 public:
-    void solve_p();
+    void solve_p(double *drho_dt);
     void update_u();
     void update_uf();
 };

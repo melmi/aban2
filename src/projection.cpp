@@ -61,7 +61,7 @@ void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
     pmatrix.AddInteraction(ix0, ix1, +1.0 * h2inv);
 }
 
-double *projection::get_rhs()
+double *projection::get_rhs(double *drho_dt)
 {
     double **rhou = (double **)d->create_var(2);
     for (int i = 0; i < d->n; ++i)
@@ -69,7 +69,8 @@ double *projection::get_rhs()
             rhou[dir][i] = d->rho[i] * d->ustar[dir][i];
     auto rhs = gradient::divergance(d, rhou, flowbc::bc_rhou_getter);
     domain::delete_var(2, rhou);
-    for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
+    for (int i = 0; i < d->n; ++i)
+        rhs[i] = (rhs[i] + drho_dt[i]) / d->dt;
     apply_rhs_bc(rhs);
     return rhs;
 }
@@ -92,16 +93,16 @@ void projection::apply_rhs_bc(double *rhs)
         }
 }
 
-void projection::solve_p()
+void projection::solve_p(double *drho_dt)
 {
-    double *rhs = get_rhs();
+    double *rhs = get_rhs(drho_dt);
     Seldon::Vector<double> b(d->n), x(d->n);
     x.SetData(d->n, d->p);
     b.SetData(d->n, rhs);
 
     Seldon::Preconditioner_Base precond;
 
-    Seldon::Iteration<double> iter(1000, 1e-3);
+    Seldon::Iteration<double> iter(1000, 1e-9);
     iter.HideMessages();
     iter.SetInitGuess(false);
 
@@ -116,9 +117,47 @@ void projection::solve_p()
     delete[] rhs;
 }
 
+double p_f(double p_P, double rho_P, double p_N, double rho_N)
+{
+    return (p_P * rho_N + p_N * rho_P) / (rho_P + rho_N);
+}
+
+double **gradient_of_p(domain *d)
+{
+    double **result = new double*[3];
+    result[2] = nullptr;
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+    {
+        result[dir] = (double *)d->create_var(1);
+        for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
+        {
+            auto row = d->rows[dir] + irow;
+            double *p_row = d->extract_scalars(row, d->p);
+            double *rho_row = d->extract_scalars(row, d->rho);
+            double *grad_row = d->extract_scalars(row, result[dir]);
+            size_t n = row->n;
+
+            for (size_t i = 1; i < n - 1; ++i)
+                grad_row[i] += (p_f(p_row[i], rho_row[i], p_row[i + 1], rho_row[i + 1]) -
+                                p_f(p_row[i], rho_row[i], p_row[i - 1], rho_row[i - 1])) / d->delta;
+
+            auto startbc = flowbc::bc_p_getter(d, row, d->p, bcside::start);
+            auto endbc   = flowbc::bc_p_getter(d, row, d->p, bcside::end);
+
+            grad_row[0] += (p_f(p_row[0], rho_row[0], p_row[1], rho_row[1]) - startbc) / d->delta;
+            grad_row[n - 1] += (endbc - p_f(p_row[n - 1], rho_row[n - 1], p_row[n - 2], rho_row[n - 2])) / d->delta;
+
+            d->insert_scalars(row, result[dir], grad_row);
+            delete[] p_row;
+            delete[] grad_row;
+        }
+    }
+    return result;
+}
+
 void projection::update_u()
 {
-    double **gradp = gradient::of_scalar(d, d->p, flowbc::bc_p_getter);
+    double **gradp = gradient_of_p(d);
 
     for (int i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
@@ -140,7 +179,8 @@ void projection::update_uf()
             double *uf = new double[row->n];
 
             for (size_t i = 0; i < row->n - 1; ++i)
-                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0 - (p[i + 1] - p[i]) / d->delta * d->dt / rho[i];
+                uf[i] = (ustar[i] + ustar[i + 1]) / 2.0
+                        - (p[i + 1] - p[i]) / d->delta * d->dt / ((rho[i] + rho[i + 1]) / 2.0);
 
             d->insert_scalars(row, d->uf[idir], uf);
 

@@ -17,16 +17,21 @@ using namespace aban2;
 
 int main(int argc, char const *argv[])
 {
-    domain *d = domain::create_from_file("mesh/cavity100x100.json");
+    domain *d = domain::create_from_file("mesh/chale.json");
+    std::fill_n(d->vof, d->n, 0.0);
+    // rectangel(d, {2, 4, 0}, {4, 8, 0}, 1);
+    rectangel(d, {0.5, 0.5, 0}, {5, 0.6, 0}, 1);
+    for (int i = 0; i < d->n; ++i)
+    {
+        d->rho[i] = d->rho_bar(d->vof[i]);
+        d->nu[i] = d->nu_bar(d->vof[i]);
+    }
 
-    std::fill_n(d->vof, d->n, 1.0);
-    std::fill_n(d->rho, d->n, d->rho1);
-    std::fill_n(d->nu, d->n, d->nu1);
     std::cout << "before run" << std::endl << std::flush;
-    solver s(d, "out/cav");
-    s.run(10000);
+    solver s(d, "out/dmbrk");
+    s.run(10);
 
-    delete d;
-    
+    //delete d;
+
     return 0;
 }

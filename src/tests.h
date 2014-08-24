@@ -242,7 +242,7 @@ void circle(domain *d, vector x0, double r)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+                vector x {d->delta *i + 3.0 * h_2, d->delta *j + 3.0 * h_2, 0};
                 vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
                 double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
 
@@ -278,7 +278,7 @@ void rectangel(domain *d, vector c, vector l, double value)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *i + h_2, d->delta *j + h_2, 0};
+                vector x {d->delta *i + 3.0 * h_2, d->delta *j + 3.0 * h_2, 0};
                 if (
                     (x.x > c.x - l.x / 2.0) &&
                     (x.x < c.x + l.x / 2.0) &&
