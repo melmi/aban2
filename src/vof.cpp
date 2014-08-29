@@ -461,9 +461,9 @@ void vof::advect()
             d->vof[i] = mass[i] / vcell;
             d->rho[i] = d->rho_bar(d->vof[i]);
             double rhov = d->rho[i] * vcell;
-            d->ustar[0][i] = rhou[0][i] / rhov;
-            d->ustar[1][i] = rhou[1][i] / rhov;
-            d->ustar[2][i] = rhou[2][i] / rhov;
+            // d->ustar[0][i] = rhou[0][i] / rhov;
+            // d->ustar[1][i] = rhou[1][i] / rhov;
+            // d->ustar[2][i] = rhou[2][i] / rhov;
         }
 
         domain::delete_var(3, grad_ustar);

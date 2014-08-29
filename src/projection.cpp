@@ -14,63 +14,71 @@ namespace aban2
 projection::projection(domain *_d): d(_d)
 {
     h2inv = 1.0 / (d->delta * d->delta);
-
-    pmatrix.Reallocate(d->n, d->n);
-
-    make_matrix();
 }
 
 projection::~projection()
 {
 }
 
-void projection::make_matrix()
+projection::matrix_t *projection::create_matrix()
 {
+    matrix_t *pmatrix = new matrix_t();
+    pmatrix->Reallocate(d->n, d->n);
+
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
             mesh_row *row = d->rows[idir] + irow;
-            add_row(row);
+            add_row(pmatrix, row);
         }
+
+    return pmatrix;
 }
 
-void projection::add_row(mesh_row *row)
+void projection::add_row(matrix_t *pmatrix, mesh_row *row)
 {
     size_t n = row->n;
-    size_t *row_idxs = d->get_row_idxs(row);
-    auto desc_start = d->boundaries[row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
-    auto desc_end   = d->boundaries[row->end_code  ]->p->desc(d->cellno(row, row->n - 1), row->dir);
+    size_t *row_cellnos = d->get_row_cellnos(row);
 
     for (size_t i = 1; i < n - 1; ++i)
     {
-        size_t ix = row_idxs[i];
-        pmatrix.AddInteraction(ix, row_idxs[i - 1], +1.0 * h2inv);
-        pmatrix.AddInteraction(ix, ix             , -2.0 * h2inv);
-        pmatrix.AddInteraction(ix, row_idxs[i + 1], +1.0 * h2inv);
+        size_t no_w = row_cellnos[i - 1], no_p = row_cellnos[i], no_e = row_cellnos[i + 1];
+        double rho_w = d->rho[no_w], rho_p = d->rho[no_p], rho_e = d->rho[no_e];
+        double _rho_f_w = 2.0 / (rho_w + rho_p), _rho_f_e = 2.0 / (rho_e + rho_p);
+
+        pmatrix->AddInteraction(no_p, no_w, +h2inv * _rho_f_w);
+        pmatrix->AddInteraction(no_p, no_p, -h2inv * (_rho_f_e + _rho_f_w));
+        pmatrix->AddInteraction(no_p, no_e, +h2inv * _rho_f_e);
     }
 
-    apply_row_bc(row_idxs[0    ], row_idxs[1    ], desc_start);
-    apply_row_bc(row_idxs[n - 1], row_idxs[n - 2], desc_end  );
+    auto desc_start = d->boundaries[row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
+    auto desc_end   = d->boundaries[row->end_code  ]->p->desc(d->cellno(row, row->n - 1), row->dir);
+    double rho_start = d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::start));
+    double rho_end   = d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::end  ));
+    apply_row_bc(pmatrix, row_cellnos[0    ], row_cellnos[1    ], desc_start, rho_start);
+    apply_row_bc(pmatrix, row_cellnos[n - 1], row_cellnos[n - 2], desc_end  , rho_end  );
 
-    delete[] row_idxs;
+    delete[] row_cellnos;
 }
 
-void projection::apply_row_bc(size_t ix0 , size_t ix1, bcdesc desc)
+void projection::apply_row_bc(matrix_t *pmatrix, size_t no0 , size_t no1, bcdesc desc, double rho_b)
 {
-    pmatrix.AddInteraction(ix0, ix0, (2.0 * desc.sw - 3.0)*h2inv);
-    pmatrix.AddInteraction(ix0, ix1, +1.0 * h2inv);
+    double rho_0 = d->rho[no0],
+           rho_1 = d->rho[no1],
+           _rho_b = 1.0 / rho_b,
+           _rho_f = 2.0 / (rho_0 + rho_1);
+
+    double c0 = 2.0 * desc.sw - 2.0;
+    double c1 = -1.0;
+
+    pmatrix->AddInteraction(no0, no0, (c0 * _rho_b + c1 * _rho_f)*h2inv);
+    pmatrix->AddInteraction(no0, no1, _rho_f * h2inv);
 }
 
-double *projection::get_rhs(double *drho_dt)
+double *projection::get_rhs()
 {
-    double **rhou = (double **)d->create_var(2);
-    for (int i = 0; i < d->n; ++i)
-        for (size_t dir = 0; dir < NDIRS; ++dir)
-            rhou[dir][i] = d->rho[i] * d->ustar[dir][i];
-    auto rhs = gradient::divergance(d, rhou, flowbc::bc_rhou_getter);
-    domain::delete_var(2, rhou);
-    for (int i = 0; i < d->n; ++i)
-        rhs[i] = (rhs[i] + drho_dt[i]) / d->dt;
+    auto rhs = gradient::divergance(d, d->ustar, flowbc::bc_u_getter);
+    for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
 }
@@ -88,25 +96,31 @@ void projection::apply_rhs_bc(double *rhs)
             auto bcdesc_start = d->boundaries[row->start_code]->p->desc(cellno_start, row->dir);
             auto bcdesc_end   = d->boundaries[row->end_code  ]->p->desc(cellno_end  , row->dir);
 
-            rhs[cellno_start] -= 2.0 * bcdesc_start.cte * h2inv;
-            rhs[cellno_end  ] -= 2.0 * bcdesc_end  .cte * h2inv;
+            double _rho_start = 1.0 / d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::start));
+            double _rho_end   = 1.0 / d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::end  ));
+
+            rhs[cellno_start] -= 2.0 * bcdesc_start.cte * _rho_start * h2inv;
+            rhs[cellno_end  ] -= 2.0 * bcdesc_end  .cte * _rho_end   * h2inv;
+
+            // rhs[cellno_start] += bcdesc_start.grad * _rho_start / d->delta;
+            // rhs[cellno_end  ] -= bcdesc_end  .grad * _rho_end   / d->delta;
         }
 }
 
-void projection::solve_p(double *drho_dt)
+void projection::solve_p()
 {
-    double *rhs = get_rhs(drho_dt);
+    auto pmatrix = create_matrix();
+    auto rhs = get_rhs();
     Seldon::Vector<double> b(d->n), x(d->n);
     x.SetData(d->n, d->p);
     b.SetData(d->n, rhs);
 
     Seldon::Preconditioner_Base precond;
-
     Seldon::Iteration<double> iter(1000, 1e-9);
     iter.HideMessages();
     iter.SetInitGuess(false);
 
-    int error = Seldon::BiCgStab(pmatrix, x, b, precond, iter);
+    int error = Seldon::BiCgStab(*pmatrix, x, b, precond, iter);
 
     std::cout << "                   #iterations: " << iter.GetNumberIteration() << std::endl;
     std::cout << "                   successful:  " << (error == 0) << std::endl;
@@ -115,6 +129,7 @@ void projection::solve_p(double *drho_dt)
     b.Nullify();
 
     delete[] rhs;
+    delete pmatrix;
 }
 
 double p_f(double p_P, double rho_P, double p_N, double rho_N)

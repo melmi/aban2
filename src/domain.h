@@ -57,7 +57,7 @@ public:
     void insert_scalars(mesh_row *row, double *var, double *row_vals);
     vector *extract_vectors(mesh_row *row, double **var);
     void insert_vectors(mesh_row *row, double **var, vector *row_vals);
-    size_t *get_row_idxs(mesh_row *row);
+    size_t *get_row_cellnos(mesh_row *row);
     void *create_var(size_t rank);
     static void delete_var(size_t rank, void *v);
 

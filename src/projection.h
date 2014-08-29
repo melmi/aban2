@@ -30,17 +30,17 @@ public:
 private:
     domain *d;
     double h2inv;
-    Seldon::Matrix<double, Seldon::General, Seldon::ArrayRowSparse> pmatrix;
+    typedef Seldon::Matrix<double, Seldon::General, Seldon::ArrayRowSparse> matrix_t;
 
-    void make_matrix();
-    void add_row(mesh_row *row);
-    void apply_row_bc(size_t ix0, size_t ix1, bcdesc desc);
+    matrix_t *create_matrix();
+    void add_row(matrix_t *pmatrix, mesh_row *row);
+    void apply_row_bc(matrix_t *pmatrix, size_t no0, size_t no1, bcdesc desc, double rho_b);
 
-    double *get_rhs(double *drho_dt);
+    double *get_rhs();
     void apply_rhs_bc(double *rhs);
 
 public:
-    void solve_p(double *drho_dt);
+    void solve_p();
     void update_u();
     void update_uf();
 };

@@ -24,12 +24,14 @@ void solver::write_step(size_t step)
 solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
     projector = new projection(d);
+    advector = new advection(d);
     _vof = new vof(d);
     diffusor = new diffusion(d);
 }
 
 solver::~solver()
 {
+    delete advector;
     delete projector;
     delete _vof;
     delete diffusor;
@@ -40,22 +42,17 @@ void solver::step()
     for (int i = 0; i < NDIRS; ++i)
         std::copy_n(d->u[i], d->n, d->ustar[i]);
 
-    double *drho_dt = new double[d->n];
-    std::copy_n(d->rho, d->n, drho_dt);
-
     std::cout << "      advection " << std::endl;
     _vof->advect();
+    advector->advect_ustar();
     for (int i = 0; i < d->n; ++i)
-    {
         d->nu[i] = d->nu_bar(d->vof[i]);
-        drho_dt[i] = (drho_dt[i] - d->rho[i]) / d->dt;
-    }
     std::cout << "      diffusion " << std::endl;
     diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
     apply_source_terms();
     std::cout << "      pressure " << std::endl;
-    projector->solve_p(drho_dt);
+    projector->solve_p();
     std::cout << "      updating " << std::endl;
     projector->update_u();
     std::cout << "      calculating uf " << std::endl;
@@ -64,7 +61,6 @@ void solver::step()
               << "      divergance: " << divergance()
               << std::endl;
 
-    delete[] drho_dt;
     d->t += d->dt;
 }
 

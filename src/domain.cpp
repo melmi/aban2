@@ -55,7 +55,7 @@ void domain::register_vars()
 {
     varlist.push_back(varinfo("p", 1, true, &p));
     varlist.push_back(varinfo("u", 2, true, &u));
-    varlist.push_back(varinfo("ustar", 2, false, &ustar));
+    varlist.push_back(varinfo("ustar", 2, true, &ustar));
     varlist.push_back(varinfo("rho", 1, false, &rho));
     varlist.push_back(varinfo("nu", 1, false, &nu));
     varlist.push_back(varinfo("uf", 2, false, &uf));
@@ -159,7 +159,7 @@ void domain::insert_vectors(mesh_row *row, double **var, vector *row_vals)
     }
 }
 
-size_t *domain::get_row_idxs(mesh_row *row)
+size_t *domain::get_row_cellnos(mesh_row *row)
 {
     size_t *row_idxs = new size_t[row->n];
     for (size_t i = 0; i < row->n; ++i)

@@ -24,7 +24,6 @@ double bcdesc::face_val(double phi_P, double dx)
 
 //////////////////////////  bcondition
 
-
 double bcondition::face_val(size_t cellno, size_t dir, double *phi, double dx)
 {
     return desc(cellno, dir).face_val(phi[cellno], dx);
