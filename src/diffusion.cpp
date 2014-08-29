@@ -72,9 +72,9 @@ void diffusion::diffuse(mesh_row *row, double *phi, double *D, flowbc::member me
     delete[] phi_row;
     delete[] d_row;
 
-    delete aa;
-    delete bb;
-    delete cc;
+    delete[] aa;
+    delete[] bb;
+    delete[] cc;
 }
 
 void diffusion::diffuse_ustar()
