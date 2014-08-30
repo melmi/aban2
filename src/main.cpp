@@ -17,11 +17,11 @@ using namespace aban2;
 
 int main(int argc, char const *argv[])
 {
-    domain *d = domain::create_from_file("mesh/chale.json");
+    domain *d = domain::create_from_file("mesh/dambreak.json");
     std::fill_n(d->vof, d->n, 0.0);
-    // rectangel(d, {2, 4, 0}, {4, 8, 0}, 1);
-    rectangel(d, {0.5, 0.5, 0}, {5, 0.6, 0}, 1);
-    cout << "n: " << d->n << endl << flush;
+    // std::iota(d->no, d->no + d->n, 0);
+    rectangel(d, {0.1, 0.2, 0}, {0.2, 0.4, 0}, 1);
+    // rectangel(d, {0.5, 0.5, 0}, {5, 0.6, 0}, 1);
     for (int i = 0; i < d->n; ++i)
     {
         d->rho[i] = d->rho_bar(d->vof[i]);
@@ -29,9 +29,10 @@ int main(int argc, char const *argv[])
     }
 
     std::cout << "before run" << std::endl << std::flush;
-    solver s(d, "out/dmbrk");
-    s.run(10);
+    solver *s = new solver(d, "out/dmbrk");
+    s->run(10000);
 
+    delete s;
     delete d;
 
     return 0;
