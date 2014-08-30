@@ -29,7 +29,7 @@ class vof
     {
         double p, f1, b1, f2, b2;
     };
-    constexpr static const double epsilon = 1e-8;
+    static const double epsilon;
 
     domain *d;
     double vcell; //cell volume
@@ -45,6 +45,7 @@ class vof
     bool is_on_interface(size_t i, size_t j, size_t k, size_t no);
     void detect_interfacial_cells();
     neighbs_t get_nighb_vals(size_t i, size_t j, size_t k);
+    void relax_neighb_vals(neighbs_t &n);
     inline static double col_sum(double delta, double v1, double v2, double v3);
     inline static double dir_sign(double v1, double v2, double v3);
     inline static double get_column_grad(double p, double f, double b, double delta);
@@ -66,6 +67,8 @@ public:
 
     friend class vof_err;
 };
+
+const double vof::epsilon = 1e-8;
 
 class vof_err
 {

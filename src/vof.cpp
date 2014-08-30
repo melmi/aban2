@@ -230,6 +230,16 @@ bool vof::create_young_candidate(const neighbs_t &n, vector &candidate)
     return true;
 }
 
+void vof::relax_neighb_vals(neighbs_t &n)
+{
+    for (int ii = 0; ii < 3; ++ii)
+        for (int jj = 0; jj < 3; ++jj)
+            for (int kk = 0; kk < 3; ++kk)
+                if (n[ii][jj][kk] < -0.5)
+                    n[ii][jj][kk] = n[0][0][0];
+}
+
+
 inline vector taxicab_normalized(const vector &v)
 {
     double size = std::abs(v.x) + std::abs(v.y) + std::abs(v.z);
@@ -240,7 +250,7 @@ void vof::set_normal(size_t i, size_t j, size_t k, size_t no)
 {
     if (!on_interface[no]) return;
 
-    // vector y; // young's normal vector
+    vector y; // young's normal vector
     // bool y_ok; // young's normal ok
     vector c[3]; // column normal vector
     bool c_ok[3];
@@ -272,7 +282,11 @@ void vof::set_normal(size_t i, size_t j, size_t k, size_t no)
     // else if (y_ok) // Young helper
     //     final = &y;
     else
-        throw "could not calculate normal vector";
+    {
+        relax_neighb_vals(neighb_vals);
+        create_young_candidate(neighb_vals, y);
+        final = &y;
+    }
 
     final->normalize();
     final->to_data(d->nb, no);
