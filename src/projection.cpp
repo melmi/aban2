@@ -116,14 +116,22 @@ void projection::solve_p()
     b.SetData(d->n, rhs);
 
     Seldon::Preconditioner_Base precond;
-    Seldon::Iteration<double> iter(1000, 1e-9);
+    Seldon::Iteration<double> iter(10000, 1e-9);
     iter.HideMessages();
     iter.SetInitGuess(false);
 
     int error = Seldon::BiCgStab(*pmatrix, x, b, precond, iter);
 
     std::cout << "                   #iterations: " << iter.GetNumberIteration() << std::endl;
-    std::cout << "                   successful:  " << (error == 0) << std::endl;
+    //std::cout << "                   successful:  " << (error == 0) << std::endl;
+
+    if (error != 0)
+    {
+        std::cout << std::endl
+                  << " pressure solution diverged. " << std::endl
+                  << " program halted!" << std::endl;
+        throw false;
+    }
 
     x.Nullify();
     b.Nullify();

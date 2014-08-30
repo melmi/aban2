@@ -88,7 +88,6 @@ void solver::run(size_t nsteps)
     for (int it = 0; it < nsteps; ++it)
     {
         std::cout << "running step " << it + 1
-                  // << " [ iterations: " << psolver->iterations() << "  error: " << psolver->error() << " ]"
                   << std::endl << std::flush;
         step();
 
