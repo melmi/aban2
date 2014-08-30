@@ -17,7 +17,9 @@ namespace aban2
 void solver::write_step(size_t step)
 {
     std::stringstream s;
-    s << out_path << step << ".vtk";
+    s << out_path 
+      << std::setfill('0') << std::setw(6) << step 
+      << ".vtk";
     d->write_vtk(s.str());
 }
 
