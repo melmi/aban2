@@ -26,14 +26,12 @@ void solver::write_step(size_t step)
 solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
 {
     projector = new projection(d);
-    advector = new advection(d);
     _vof = new vof(d);
     diffusor = new diffusion(d);
 }
 
 solver::~solver()
 {
-    delete advector;
     delete projector;
     delete _vof;
     delete diffusor;
@@ -46,7 +44,6 @@ void solver::step()
 
     std::cout << "      advection " << std::endl;
     _vof->advect();
-    advector->advect_ustar();
     for (int i = 0; i < d->n; ++i)
         d->nu[i] = d->nu_bar(d->vof[i]);
     std::cout << "      diffusion " << std::endl;
@@ -59,7 +56,7 @@ void solver::step()
     projector->update_u();
     std::cout << "      calculating uf " << std::endl;
     projector->update_uf();
-    std::cout << std::scientific
+    std::cout //<< std::scientific
               << "      divergance: " << divergance()
               << std::endl;
 

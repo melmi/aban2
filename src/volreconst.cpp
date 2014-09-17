@@ -15,11 +15,16 @@ volreconst *volreconst::from_base_data(vector _c, vector _m)
     vector m = {std::abs(_m.x), std::abs(_m.y), std::abs(_m.z)};
     if (m.l2() < epsilon)m.x = 1;
 
+    const double min_ratio = 0.001;
+    has_elem[0] = std::abs(m.x / m.y) > min_ratio && std::abs(m.x / m.z) > min_ratio;
+    has_elem[1] = std::abs(m.y / m.z) > min_ratio && std::abs(m.y / m.x) > min_ratio;
+    has_elem[2] = std::abs(m.z / m.x) > min_ratio && std::abs(m.z / m.y) > min_ratio;
+
     double base_vol = 1;
     size_t ndirs = 0;
-    if (has_elem[0] = m.x > epsilon) base_vol /= m.x * ++ndirs; else base_vol *= _c.x;
-    if (has_elem[1] = m.y > epsilon) base_vol /= m.y * ++ndirs; else base_vol *= _c.y;
-    if (has_elem[2] = m.z > epsilon) base_vol /= m.z * ++ndirs; else base_vol *= _c.z;
+    if (has_elem[0]) base_vol /= m.x * ++ndirs; else base_vol *= _c.x;
+    if (has_elem[1]) base_vol /= m.y * ++ndirs; else base_vol *= _c.y;
+    if (has_elem[2]) base_vol /= m.z * ++ndirs; else base_vol *= _c.z;
 
     volreconst *result;
     switch (ndirs)
@@ -113,7 +118,7 @@ volreconst *volreconst::from_volume(vector c, vector m, double volume)
 volreconst *volreconst::from_alpha(vector c, vector m, double alpha)
 {
     volreconst *result = volreconst::from_base_data(c, m);
-    result->alpha = alpha;
+    result->alpha = std::min(alpha, result->alpha_max);
     result->set_volume();
     return result;
 }

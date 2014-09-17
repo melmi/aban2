@@ -14,7 +14,6 @@
 #include "common.h"
 #include "domain.h"
 #include "vof.h"
-#include "advection.h"
 #include "diffusion.h"
 #include "projection.h"
 
@@ -28,7 +27,6 @@ private:
     projection *projector;
     vof *_vof;
     diffusion *diffusor;
-    advection *advector;
     std::string out_path;
 
     void apply_source_terms();
