@@ -17,6 +17,7 @@ using namespace aban2;
 
 int main(int argc, char const *argv[])
 {
+    /*
     domain *d = domain::create_from_file("mesh/dambreak.json");
     std::fill_n(d->vof, d->n, 0.0);
     // std::iota(d->no, d->no + d->n, 0);
@@ -34,6 +35,8 @@ int main(int argc, char const *argv[])
 
     delete s;
     delete d;
-
+*/
+    vof_reconst_accuracy_test();
+    //zalesak_disk_rotation_test();
     return 0;
 }

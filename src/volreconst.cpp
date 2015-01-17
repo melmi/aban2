@@ -79,11 +79,9 @@ volreconst *volreconst::get_cut(size_t dir, double delta)
     vector new_c = c;
     new_c.cmpnt[dir] = delta;
 
-    double new_alpha;
-    if (from_start)
-        new_alpha = alpha;
-    else
-        new_alpha = alpha - (c.cmpnt[dir] - delta) * m.cmpnt[dir];
+    double new_alpha = alpha;
+    if (!from_start)
+        new_alpha -= (c.cmpnt[dir] - delta) * m.cmpnt[dir];
 
     return volreconst::from_alpha(new_c, orig_m, new_alpha);
 }

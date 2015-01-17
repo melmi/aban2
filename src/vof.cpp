@@ -236,9 +236,8 @@ void vof::relax_neighb_vals(neighbs_t &n)
         for (int jj = 0; jj < 3; ++jj)
             for (int kk = 0; kk < 3; ++kk)
                 if (n[ii][jj][kk] < -0.5)
-                    n[ii][jj][kk] = n[0][0][0];
+                    n[ii][jj][kk] = n[1][1][1];
 }
-
 
 inline vector taxicab_normalized(const vector &v)
 {
@@ -352,8 +351,8 @@ std::tuple<double, vector> vof::get_flux(mesh_row *row, size_t i, double udt, do
         #endif
     };
 
-    vector flux_ustar0 = d->rho0 * (ustar * v0 + vector(q0 * grad[0], q0 * grad[1], q0 * grad[2]));
-    vector flux_ustar1 = d->rho1 * (ustar * v1 + vector(q1 * grad[0], q1 * grad[1], q1 * grad[2]));
+    vector flux_ustar0 = d->rho0 * (ustar * v0 /*+ vector(q0 * grad[0], q0 * grad[1], q0 * grad[2])*/);
+    vector flux_ustar1 = d->rho1 * (ustar * v1 /*+ vector(q1 * grad[0], q1 * grad[1], q1 * grad[2])*/);
 
     return std::make_tuple(v1, flux_ustar0 + flux_ustar1);
 }

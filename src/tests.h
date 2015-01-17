@@ -11,7 +11,6 @@
 #include "common.h"
 #include <iostream>
 #include <cmath>
-#include <sstream>
 
 #include "domain.h"
 #include "volreconst.h"
@@ -23,14 +22,6 @@ namespace aban2
 {
 
 //-------------------------- utility functions
-
-template <typename T>
-string to_string (T number)
-{
-    ostringstream ss;
-    ss << number;
-    return ss.str();
-}
 
 void check_continuety(domain *d)
 {
@@ -180,7 +171,6 @@ void vof_reconst_accuracy_test()
         "mesh/cavity80x80.json",
         "mesh/cavity160x160.json"
     };
-    // bool first = true;
     for (auto f : files)
     {
         cout << "========" << endl;
@@ -189,16 +179,15 @@ void vof_reconst_accuracy_test()
         domain *d = domain::create_from_file(f);
         cout << "initializing" << endl;
         circle(d, {0.5, 0.5, 0}, 0.30);
-        vof vofc(d);
+        vof *vofc = new vof(d);
         cout << "calculating normals" << endl;
-        //vofc.calculate_normals();
+        vofc->calculate_normals();
         cout << "writing" << endl;
-        // if (first)
-        //     d->write_vtk("out/my-method.vtk");
-        // first = false;
+        d->write_vtk("out/" + f.substr(5) + ".vtk");
         cout << "comparing" << endl;
-        cout << vof_err::compare(vofc) << endl;
-        //delete d;
+        cout << vof_err::compare(*vofc) << endl;
+        delete vofc;
+        delete d;
     }
 
     cout << "done" << endl;
@@ -209,22 +198,22 @@ void zalesak_disk(domain *);
 void zalesak_disk_rotation_test()
 {
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    vof _vof(d);
-    vortex(d, {50, 50, 0}, 0.01);
+    vof *_vof = new vof(d);
+    vortex(d, {0.5, 0.5, 0}, 0.01);
     zalesak_disk(d);
 
     d->write_vtk("out/zalesak0.vtk");
     for (int i = 0; i < 700; ++i)
     {
         std::cout << "step " << i + 1 << std::endl << std::flush;
-        _vof.advect();
+        _vof->advect();
 
         stringstream ss;
         ss << "out/zalesak" << i + 1 << ".vtk";
         d->write_vtk(ss.str());
     }
 
-
+    delete _vof;
     delete d;
 }
 
@@ -295,8 +284,8 @@ void square(domain *d, vector c, double a)
 
 void zalesak_disk(domain *d)
 {
-    circle(d, {50, 75, 0}, 15);
-    rectangel(d, {50, 72.5, 0}, {5 , 25 , 0}, 0);
+    circle(d, {0.5, 0.75, 0}, 0.15);
+    rectangel(d, {0.5, 0.725, 0}, {0.05 , 0.25 , 0}, 0);
 }
 
 //-------------------------- velocity fields

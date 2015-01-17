@@ -128,9 +128,9 @@ mesh::mesh(Json::Value *root)
     Json::Value codes_val = (*root)["codes"];
     for (size_t k = 0; k < ndir[2]; ++k)
     {
-        Json::Value codesk = codes_val[ndir[2] - k - 1];
+        Json::Value codesk = codes_val[(int)(ndir[2] - k - 1)];
         for (size_t j = 0; j < ndir[1]; ++j)
-            str += codesk[ndir[1] - j - 1].asString();
+            str += codesk[(int)(ndir[1] - j - 1)].asString();
     }
 
     codes = new char[str.length() + 1];

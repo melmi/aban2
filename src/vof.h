@@ -53,7 +53,7 @@ class vof
     void create_column_candidates(const neighbs_t &n, vector *candidates, bool *ok);
     bool create_young_candidate(const neighbs_t &n, vector &v);
     void set_normal(size_t i, size_t j, size_t k, size_t no);
-    void calculate_normals();
+    // void calculate_normals();
     void create_reconsts();
     void delete_reconsts();
     inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar);
@@ -62,6 +62,7 @@ class vof
     void calculate_masses_from_vars();
     void calculate_vars_from_masses();
 public:
+    void calculate_normals();
     vof(domain *_d);
     ~vof();
 
