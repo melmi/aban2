@@ -45,7 +45,10 @@ class vof
     bool is_on_interface(size_t i, size_t j, size_t k, size_t no);
     void detect_interfacial_cells();
     neighbs_t get_nighb_vals(size_t i, size_t j, size_t k);
-    void relax_neighb_vals(neighbs_t &n);
+    inline void relax_center_val(int i, int j, int k, neighbs_t &n);
+    inline void relax_edge_val(int i, int j, int k, neighbs_t &n);
+    inline void relax_corner_val(int i, int j, int k, neighbs_t &n);
+    inline void relax_neighb_vals(neighbs_t &n);
     inline static double col_sum(double delta, double v1, double v2, double v3);
     inline static double dir_sign(double v1, double v2, double v3);
     inline static double get_column_grad(double p, double f, double b, double delta);
