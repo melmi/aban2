@@ -230,13 +230,70 @@ bool vof::create_young_candidate(const neighbs_t &n, vector &candidate)
     return true;
 }
 
+void vof::relax_center_val(int i, int j, int k, neighbs_t &n)
+{
+    if (n[i][j][k] < -0.5)n[i][j][k] = n[1][1][1];
+}
+
+void vof::relax_edge_val(int i, int j, int k, neighbs_t &n)
+{
+    if (n[i][j][k] >= -0.5)return;
+
+    int i1 = i, i2 = i, j1 = j, j2 = j, k1 = k, k2 = k;
+
+    if (i == 1) {j1 = (j + 1) % 3; k2 = (k + 1) % 3;}
+    if (j == 1) {i1 = (i + 1) % 3; k2 = (k + 1) % 3;}
+    if (k == 1) {i1 = (i + 1) % 3; j2 = (j + 1) % 3;}
+
+    n[i][j][k] = 0.5 * (n[i1][j1][k1] + n[i2][j2][k2]);
+}
+
+void vof::relax_corner_val(int i, int j, int k, neighbs_t &n)
+{
+    if (n[i][j][k] >= -0.5)return;
+
+    int ii = (i + 1) % 3;
+    int jj = (j + 1) % 3;
+    int kk = (k + 1) % 3;
+
+    n[i][j][k] = (n[ii][j][k] + n[i][jj][k] + n[i][j][kk]) / 3.0;
+}
+
 void vof::relax_neighb_vals(neighbs_t &n)
 {
-    for (int ii = 0; ii < 3; ++ii)
-        for (int jj = 0; jj < 3; ++jj)
-            for (int kk = 0; kk < 3; ++kk)
-                if (n[ii][jj][kk] < -0.5)
-                    n[ii][jj][kk] = n[1][1][1];
+    relax_center_val(0, 1, 1, n);
+    relax_center_val(2, 1, 1, n);
+    relax_center_val(1, 0, 1, n);
+    relax_center_val(1, 2, 1, n);
+    relax_center_val(1, 1, 0, n);
+    relax_center_val(1, 1, 2, n);
+
+    relax_edge_val(1, 0, 0, n);
+    relax_edge_val(1, 0, 2, n);
+    relax_edge_val(1, 2, 0, n);
+    relax_edge_val(1, 2, 2, n);
+    relax_edge_val(0, 1, 0, n);
+    relax_edge_val(0, 1, 2, n);
+    relax_edge_val(2, 1, 0, n);
+    relax_edge_val(2, 1, 2, n);
+    relax_edge_val(0, 0, 1, n);
+    relax_edge_val(0, 2, 1, n);
+    relax_edge_val(2, 0, 1, n);
+    relax_edge_val(2, 2, 1, n);
+
+    relax_corner_val(0, 0, 0, n);
+    relax_corner_val(0, 0, 2, n);
+    relax_corner_val(0, 2, 0, n);
+    relax_corner_val(0, 2, 2, n);
+    relax_corner_val(2, 0, 0, n);
+    relax_corner_val(2, 0, 2, n);
+    relax_corner_val(2, 2, 0, n);
+    relax_corner_val(2, 2, 2, n);
+
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            for (int k = 0; k < 3; ++k)
+                std::cout << i << " " << j << " " << k << " " << n[i][j][k] << std::endl;
 }
 
 inline vector taxicab_normalized(const vector &v)
