@@ -17,8 +17,8 @@ namespace aban2
 void solver::write_step(size_t step)
 {
     std::stringstream s;
-    s << out_path 
-      << std::setfill('0') << std::setw(6) << step 
+    s << out_path
+      << std::setfill('0') << std::setw(6) << step
       << ".vtk";
     d->write_vtk(s.str());
 }
@@ -57,8 +57,8 @@ void solver::step()
     std::cout << "      calculating uf " << std::endl;
     projector->update_uf();
     std::cout //<< std::scientific
-              << "      divergance: " << divergance()
-              << std::endl;
+            << "      divergance: " << divergance()
+            << std::endl;
 
     d->t += d->dt;
 }
@@ -82,6 +82,8 @@ double solver::divergance()
 
 void solver::run(size_t nsteps)
 {
+    for (int i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+        
     write_step(0);
 
     for (int it = 0; it < nsteps; ++it)
