@@ -35,8 +35,18 @@ int main(int argc, char const *argv[])
 
     delete s;
     delete d;
-*/
-    vof_reconst_accuracy_test();
-    //zalesak_disk_rotation_test();
+    */
+    zalesak_disk_rotation_test();
+
+    if (false)
+    {
+        auto v = aban2::volreconst::from_alpha({2, 2, 2}, {1, 0, 0}, 0.6);
+        std::cout << "{" << std::endl
+                  << "\tc: " << v->c << "," << std::endl
+                  << "\tm: " << v->m << "," << std::endl
+                  << "\tvolume: { expected: " << 2.4 << ", calculated: " << v->volume << " }" << std::endl
+                  << "}" << std::endl;
+    }
+
     return 0;
 }

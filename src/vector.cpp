@@ -122,10 +122,10 @@ vector operator*(double r, const vector v)
 
 std::ostream &operator<< (std::ostream &out, vector v)
 {
-    out << "("
+    out << "["
         << v.x << ", "
         << v.y << ", "
-        << v.z << ")";
+        << v.z << "]";
     return out;
 }
 

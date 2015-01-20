@@ -128,8 +128,8 @@ double vof::get_column_grad(double p, double f, double b, double delta)
     if (f < -0.5) return (p - b) / delta;
     if (b < -0.5) return (f - p) / delta;
 
-    double gf = (f - p);// / delta;
-    double gb = (p - b);// / delta;
+    double gf = (f - p) / delta;
+    double gb = (p - b) / delta;
 
     // return std::abs(gb) > std::abs(gf) ? gb : gf; // Zalski
     // return 0.5 * (gf + bf); // CC
@@ -137,8 +137,8 @@ double vof::get_column_grad(double p, double f, double b, double delta)
     double yf = p + 1.5 * delta * gb;
     double yb = p - 1.5 * delta * gf;
 
-    bool cf = 0 <= yf && yf <= 3;
-    bool cb = 0 <= yb && yb <= 3;
+    bool cf = 0 <= yf && yf <= 3 * delta;
+    bool cb = 0 <= yb && yb <= 3 * delta;
 
     if (cf && !cb) return gf;
     if (cb && !cf) return gb;
@@ -314,21 +314,21 @@ void vof::set_normal(size_t i, size_t j, size_t k, size_t no)
     if (c_ok[0] || c_ok[1] || c_ok[2])
     {
         double m0[] {0, 0, 0};
-        size_t dir = 0;
+        size_t selected_dir = -1;
         for (size_t i = 0; i < 3; ++i)
             if (c_ok[i])
             {
                 m0[i] = std::abs(taxicab_normalized(c[i]).cmpnt[i]);
-                if (m0[i] > m0[dir])dir = i;
+                if (selected_dir == -1 || m0[i] > m0[selected_dir])selected_dir = i;
             }
 
         // if (y_ok)
-        //     if (std::abs(taxicab_normalized(y).cmpnt[dir]) < m0[dir])
+        //     if (std::abs(taxicab_normalized(y).cmpnt[selected_dir]) < m0[selected_dir])
         //         final = &y;
         //     else
-        //         final = c + dir;
+        //         final = c + selected_dir;
         // else
-        final = c + dir;
+        final = c + selected_dir;
     }
     // else if (y_ok) // Young helper
     //     final = &y;
@@ -525,9 +525,9 @@ void vof::advect()
     for (size_t idir = 0; idir < NDIRS; ++idir)
     {
         calculate_normals();
+        calculate_masses_from_vars();
         delete_reconsts();
         create_reconsts();
-        calculate_masses_from_vars();
 
         size_t dir = (start_dir + idir) % NDIRS;
 

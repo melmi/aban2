@@ -200,17 +200,18 @@ void zalesak_disk_rotation_test()
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
     vof *_vof = new vof(d);
     vortex(d, {0.5, 0.5, 0}, 0.01);
+    // for (int i = 0; i < d->n; ++i)d->uf[1][i] = -0.005;
     zalesak_disk(d);
 
+    _vof->calculate_normals();
     d->write_vtk("out/zalesak0.vtk");
     for (int i = 0; i < 700; ++i)
     {
         std::cout << "step " << i + 1 << std::endl << std::flush;
         _vof->advect();
 
-        stringstream ss;
-        ss << "out/zalesak" << i + 1 << ".vtk";
-        d->write_vtk(ss.str());
+        _vof->calculate_normals();
+        d->write_vtk("out/zalesak" + to_string(i + 1) + ".vtk");
     }
 
     delete _vof;
@@ -218,6 +219,20 @@ void zalesak_disk_rotation_test()
 }
 
 //-------------------------- vof shapes
+
+/*
+      y
+      ^
+      |
+  +---+---+---+---+
+  |   |   |   |   |
+  +---+---+---+---+
+  |   |   |   |   |
+  +---o---+---+---+-> x
+  |   |   |   |   |
+  +---+---+---+---+
+
+*/
 
 void circle(domain *d, vector x0, double r)
 {
@@ -231,7 +246,7 @@ void circle(domain *d, vector x0, double r)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *i + 3.0 * h_2, d->delta *j + 3.0 * h_2, 0};
+                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
                 vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
                 double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
 
@@ -267,7 +282,7 @@ void rectangel(domain *d, vector c, vector l, double value)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *i + 3.0 * h_2, d->delta *j + 3.0 * h_2, 0};
+                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
                 if (
                     (x.x > c.x - l.x / 2.0) &&
                     (x.x < c.x + l.x / 2.0) &&
@@ -298,7 +313,7 @@ void vortex(domain *d, vector x0, double omega)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))
             {
-                vector x {d->delta *(i + 1), d->delta *(j + 1), 0};
+                vector x {d->delta * i, d->delta * j, 0};
 
                 d->uf[0][no] = omega * (x0.y - x.y);
                 d->uf[1][no] = omega * (x.x - x0.x);
