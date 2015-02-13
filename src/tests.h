@@ -9,8 +9,10 @@
 #define _TESTS_H_
 
 #include "common.h"
+#include "debug.h"
 #include <iostream>
 #include <cmath>
+#include <functional>
 
 #include "domain.h"
 #include "volreconst.h"
@@ -158,6 +160,7 @@ void diff_test1(domain *d)
                 }
 }
 
+void square(domain *d, vector c, double a);
 void circle(domain *d, vector x0, double r);
 void vortex(domain *d, vector x0, double omega);
 
@@ -194,14 +197,25 @@ void vof_reconst_accuracy_test()
 }
 
 void zalesak_disk(domain *);
+void fill_func(domain *d, double *phi, std::function<double(vector)> f);
 
 void zalesak_disk_rotation_test()
 {
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
+    for (int i = 0; i < d->n; ++i) d->p[i] = i;
+
     vof *_vof = new vof(d);
-    vortex(d, {0.5, 0.5, 0}, 0.01);
-    // for (int i = 0; i < d->n; ++i)d->uf[1][i] = -0.005;
-    zalesak_disk(d);
+    fill_func(d, d->uf[1], [](vector x) {return -0.004;});
+    //vortex(d, {0.5, 0.5, 0}, 0.01);
+    // fill_func(d, d->ustar[0], [](vector x) {return x* vector{1, 1, 0};});
+    fill_func(d, d->ustar[0], [](vector x)
+    {
+        vector x0 {0.5, 0.75, 0};
+        return std::exp(-((x - x0) * (x - x0)) / 0.06);
+    });
+    square(d, {0.5, 0.75, 0}, 0.15);
+    // zalesak_disk(d);
+    for (int i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
 
     _vof->calculate_normals();
     d->write_vtk("out/zalesak0.vtk");
@@ -305,7 +319,7 @@ void zalesak_disk(domain *d)
 
 //-------------------------- velocity fields
 
-void vortex(domain *d, vector x0, double omega)
+void fill_func(domain *d, double *phi, std::function<double(vector)> f)
 {
     size_t no;
     double h_2 = d->delta / 2.0;
@@ -314,10 +328,14 @@ void vortex(domain *d, vector x0, double omega)
             if (d->exists(i, j, 0, no))
             {
                 vector x {d->delta * i, d->delta * j, 0};
-
-                d->uf[0][no] = omega * (x0.y - x.y);
-                d->uf[1][no] = omega * (x.x - x0.x);
+                phi[no] = f(x);
             }
+}
+
+void vortex(domain *d, vector x0, double omega)
+{
+    fill_func(d, d->uf[0], [x0, omega](vector x) {return omega * (x0.y - x.y);});
+    fill_func(d, d->uf[1], [x0, omega](vector x) {return omega * (x.x - x0.x);});
 }
 
 }
