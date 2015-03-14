@@ -1,3 +1,6 @@
 *.sublime-workspace
 bin/*
 out/*
+*.swp
+*.swo
+*~
