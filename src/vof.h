@@ -47,7 +47,8 @@ class vof
     inline std::tuple<double, vector, vector> get_bc_flux(mesh_row *row, double ***grad_ustar, bcside side);
     void advect_row(mesh_row *row, double ***grad_ustar);
     void correct_vofs(double *grad_uf_dir);
-    void calculate_masses_from_vars(double ***grad_ustar);
+    void calculate_vof_masses_from_vars();
+    void calculate_ustar_masses_from_vars(double ***grad_ustar);
     void calculate_vars_from_masses();
 public:
     void calculate_normals();

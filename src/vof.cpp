@@ -274,12 +274,16 @@ void vof::calculate_normals()
                         _fsnorm.get_normal(i, j, k, no).to_data(d->nb, no);
 }
 
-void vof::calculate_masses_from_vars(double ***grad_ustar)
+void vof::calculate_vof_masses_from_vars()
+{
+    for (size_t i = 0; i < d->n; ++i)
+        mass[i] = d->vof[i] * vcell;
+}
+
+void vof::calculate_ustar_masses_from_vars(double ***grad_ustar)
 {
     for (size_t i = 0; i < d->n; ++i)
     {
-        mass[i] = d->vof[i] * vcell;
-
         vector rhou0p, rhou1p;
         vector ustar = vector::from_data(d->ustar, 1);
         if (fullnesses[i] == fullness::half)
@@ -321,7 +325,6 @@ void vof::calculate_vars_from_masses()
     {
         d->vof[i] = mass[i] / vcell;
         d->rho[i] = d->rho_bar(d->vof[i]);
-        double rhov = d->rho[i] * vcell;
         d->ustar[0][i] = (rhou0[0][i] / d->rho0 + rhou1[0][i] / d->rho1) / vcell;
         d->ustar[1][i] = (rhou0[1][i] / d->rho0 + rhou1[1][i] / d->rho1) / vcell;
         d->ustar[2][i] = (rhou0[2][i] / d->rho0 + rhou1[2][i] / d->rho1) / vcell;
@@ -340,9 +343,10 @@ void vof::advect()
         calculate_normals();
         
         // reconstruct
+        calculate_vof_masses_from_vars();
         create_reconsts();
         auto grad_ustar = gradient::of_vec(d, d->ustar, flowbc::bc_u_getter);
-        calculate_masses_from_vars(grad_ustar);
+        calculate_ustar_masses_from_vars(grad_ustar);
 
         // evolve
         size_t dir = (start_dir + idir) % NDIRS;
