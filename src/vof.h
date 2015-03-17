@@ -18,19 +18,20 @@
 namespace aban2
 {
 
-enum class fullness
-{
-    full, empty, half
-};
-
 class vof
 {
+    enum class fullness
+    {
+        full, empty, half
+    };
+
     domain *d;
     fsnorm _fsnorm;
     double vcell; //cell volume
+    double aface; //face area
     size_t start_dir = 0;
     double *mass;
-    double *rhou[3];
+    double *rhou0[3], *rhou1[3];
     fullness *fullnesses;
     bool *on_interface;
     volreconst **reconsts;
@@ -42,10 +43,11 @@ class vof
     // void calculate_normals();
     void create_reconsts();
     void delete_reconsts();
-    inline std::tuple<double, vector> get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar);
+    inline std::tuple<double, vector, vector> get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar);
+    inline std::tuple<double, vector, vector> get_bc_flux(mesh_row *row, double ***grad_ustar, bcside side);
     void advect_row(mesh_row *row, double ***grad_ustar);
     void correct_vofs(double *grad_uf_dir);
-    void calculate_masses_from_vars();
+    void calculate_masses_from_vars(double ***grad_ustar);
     void calculate_vars_from_masses();
 public:
     void calculate_normals();
@@ -67,5 +69,4 @@ public:
 }
 
 #endif
-
 

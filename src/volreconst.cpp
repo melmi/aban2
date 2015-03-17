@@ -22,16 +22,25 @@ volreconst *volreconst::from_base_data(vector _c, vector _m)
 
     double base_vol = 1;
     size_t ndirs = 0;
-    if (has_elem[0]) base_vol /= m.x * ++ndirs; else base_vol *= _c.x;
-    if (has_elem[1]) base_vol /= m.y * ++ndirs; else base_vol *= _c.y;
-    if (has_elem[2]) base_vol /= m.z * ++ndirs; else base_vol *= _c.z;
+    if (has_elem[0]) base_vol /= m.x * ++ndirs;
+    else base_vol *= _c.x;
+    if (has_elem[1]) base_vol /= m.y * ++ndirs;
+    else base_vol *= _c.y;
+    if (has_elem[2]) base_vol /= m.z * ++ndirs;
+    else base_vol *= _c.z;
 
     volreconst *result;
     switch (ndirs)
     {
-    case 1: result = new volreconst1d(); break;
-    case 2: result = new volreconst2d(); break;
-    case 3: result = new volreconst3d(); break;
+    case 1:
+        result = new volreconst1d();
+        break;
+    case 2:
+        result = new volreconst2d();
+        break;
+    case 3:
+        result = new volreconst3d();
+        break;
     }
 
     result->c = _c;
@@ -90,7 +99,7 @@ std::tuple<double, vector> volreconst::get_flux(size_t dir, double delta)
 {
     auto cut = get_cut(dir, delta);
     double v = cut->volume;
-    vector q { cut->get_moment(0), cut->get_moment(1), cut->get_moment(2)};
+    vector q = cut->get_moments();
     delete cut;
 
     // moving q to the axis of current volume
@@ -119,6 +128,21 @@ volreconst *volreconst::from_alpha(vector c, vector m, double alpha)
     result->alpha = std::min(alpha, result->alpha_max);
     result->set_volume();
     return result;
+}
+
+double volreconst::get_volume()
+{
+    return volume;
+}
+
+double volreconst::get_alpha()
+{
+    return alpha;
+}
+
+vector volreconst::get_moments()
+{
+    return {get_moment(0), get_moment(1), get_moment(2)};
 }
 
 /******************** volreconst1d ********************/
@@ -224,3 +248,4 @@ double volreconst3d::get_moment(size_t dir)
 }
 
 }
+

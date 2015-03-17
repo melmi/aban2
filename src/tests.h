@@ -282,7 +282,7 @@ void circle(domain *d, vector x0, double r)
                 size_t idx = min_element_index(l2, l2 + 4);
                 double alpha = r - ps[idx] * n;
                 volreconst *reconst = volreconst::from_alpha(h, n, alpha);
-                d->vof[no] = reconst->volume / v;
+                d->vof[no] = reconst->get_volume() / v;
                 delete reconst;
             }
 }
