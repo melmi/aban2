@@ -169,9 +169,9 @@ std::tuple<double, vector, vector> vof::get_bc_flux(mesh_row *row, double ***gra
     double vof_b = flowbc::bc_vof_getter(d, row, d->vof, side);
     vector ustar_b
     {
-        flowbc::bc_u_getter[0](d, row, d->ustar[0], side),
-        flowbc::bc_u_getter[1](d, row, d->ustar[1], side),
-        flowbc::bc_u_getter[2](d, row, d->ustar[2], side)
+        flowbc::bc_u_getter[0](d, row, d->u[0], side),
+        flowbc::bc_u_getter[1](d, row, d->u[1], side),
+        flowbc::bc_u_getter[2](d, row, d->u[2], side)
     };
 
     double v = aface * uf_b * d->dt;
