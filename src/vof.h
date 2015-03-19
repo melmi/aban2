@@ -44,7 +44,7 @@ class vof
     inline std::tuple<double, vector, vector> get_flux(mesh::row *row, size_t i, double udt, double ***grad_ustar);
     inline std::tuple<double, vector, vector> get_bc_flux(mesh::row *row, double ***grad_ustar, bcside side);
     void advect_row(mesh::row *row, double ***grad_ustar);
-    void correct_vofs(double *grad_uf_dir);
+    void correct_vofs(size_t dir);
     void calculate_vof_masses_from_vars();
     void calculate_ustar_masses_from_vars(double ***grad_ustar);
     void calculate_vars_from_masses();

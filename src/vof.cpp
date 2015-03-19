@@ -252,12 +252,16 @@ void vof::advect_row(mesh::row *row, double ***grad_ustar)
     delete[] row_rhou1[2];
 }
 
-void vof::correct_vofs(double *grad_uf_dir)
+void vof::correct_vofs(size_t dir)
 {
+    auto grad_uf = gradient::of_uf_dir(d, dir);
+    
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
         if (d->vof[i] > 0.5)
-            mass[i] += grad_uf_dir[i] * d->vcell * d->dt;
+            mass[i] += grad_uf[i] * d->vcell * d->dt;
+
+    delete[] grad_uf;
 }
 
 void vof::calculate_normals()
@@ -351,9 +355,7 @@ void vof::advect()
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             advect_row(d->rows[dir] + irow, grad_ustar);
 
-        auto grad_uf = gradient::of_uf_dir(d, dir);
-        correct_vofs(grad_uf);
-        delete[] grad_uf;
+        correct_vofs(dir);
 
         // average
         calculate_vars_from_masses();
