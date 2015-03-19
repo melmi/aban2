@@ -33,7 +33,7 @@ void check_continuety(domain *d)
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 1; irow < d->nrows[dir] - 1; ++irow)
         {
-            mesh_row *row = d->rows[dir] + irow;
+            mesh::row *row = d->rows[dir] + irow;
             for (size_t i = 1; i < row->n - 1; ++i)
             {
                 double *u = d->extract_scalars(row, d->uf[row->dir]);
@@ -52,7 +52,7 @@ void check_continuety(domain *d)
     cout << "divergance: " << std::accumulate(div, div + d->n, 0) << std::endl;
 }
 
-string rowtostr(mesh_row *r)
+string rowtostr(mesh::row *r)
 {
     std::stringstream s;
     s << "n: (" << r->n << ")  ";
@@ -88,7 +88,7 @@ void print_rows(domain *d)
         cout << "======= dir: " << dir << endl;
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
         {
-            mesh_row *row = d->rows[dir] + irow;
+            mesh::row *row = d->rows[dir] + irow;
             cout << rowtostr(row) << endl;
 
             // auto a = d->get_row_idxs(row);

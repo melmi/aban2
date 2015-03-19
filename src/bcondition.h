@@ -12,12 +12,11 @@
 #include <jsoncpp/json/json.h>
 #include "vector.h"
 #include <functional>
+#include "mesh.h"
 
 namespace aban2
 {
-
 class domain;
-class mesh_row;
 
 struct bcdesc
 {
@@ -45,7 +44,7 @@ class flowbc
 {
 public:
     typedef bcondition *flowbc::*member;
-    typedef std::function<double(domain *, mesh_row *, double *, bcside)> bc_val_getter;
+    typedef std::function<double(domain *, mesh::row *, double *, bcside)> bc_val_getter;
 
     bcondition *u0, *u1, *u2, *p, *vof;
 

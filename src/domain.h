@@ -20,23 +20,22 @@
 namespace aban2
 {
 
-struct varinfo
-{
-    std::string name;
-    char rank;
-    bool show;
-    union
-    {
-        void *generic;
-        double **scalar;
-        double ** *vec;
-    } data;
-
-    varinfo(std::string _name, char _rank, bool _show, void *_data);
-};
-
 class domain: public mesh
 {
+    struct varinfo
+    {
+        std::string name;
+        char rank;
+        bool show;
+        union
+        {
+            void *generic;
+            double **scalar;
+            double ***vec;
+        } data;
+
+        varinfo(std::string _name, char _rank, bool _show, void *_data);
+    };
 public:
     double **uf, * *u, * *ustar, *p;
     double rho0, rho1, nu0, nu1;
@@ -53,11 +52,11 @@ public:
     domain(Json::Value *root);
     virtual void register_vars();
     void write_vtk(std::string file_name);
-    double *extract_scalars(mesh_row *row, double *var);
-    void insert_scalars(mesh_row *row, double *var, double *row_vals);
-    vector *extract_vectors(mesh_row *row, double **var);
-    void insert_vectors(mesh_row *row, double **var, vector *row_vals);
-    size_t *get_row_cellnos(mesh_row *row);
+    double *extract_scalars(row *r, double *var);
+    void insert_scalars(row *row, double *var, double *row_vals);
+    vector *extract_vectors(row *row, double **var);
+    void insert_vectors(row *row, double **var, vector *row_vals);
+    size_t *get_row_cellnos(row *row);
     void *create_var(size_t rank);
     static void delete_var(size_t rank, void *v);
 
@@ -72,3 +71,4 @@ private:
 }
 
 #endif
+

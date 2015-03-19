@@ -26,7 +26,6 @@ class fsnorm
     static const double epsilon;
 
     domain *d;
-    double vcell; //cell volume
 
     neighbs_t get_nighb_vals(size_t i, size_t j, size_t k);
     inline void relax_center_val(int i, int j, int k, neighbs_t &n);

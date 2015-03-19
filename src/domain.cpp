@@ -10,7 +10,7 @@
 namespace aban2
 {
 
-varinfo::varinfo(std::string _name, char _rank, bool _show, void *_data):
+domain::varinfo::varinfo(std::string _name, char _rank, bool _show, void *_data):
     name(_name), rank(_rank), show(_show)
 {
     data.generic = _data;
@@ -55,13 +55,13 @@ void domain::register_vars()
 {
     varlist.push_back(varinfo("p", 1, true, &p));
     varlist.push_back(varinfo("u", 2, true, &u));
-    varlist.push_back(varinfo("ustar", 2, true, &ustar));
-    varlist.push_back(varinfo("rho", 1, true, &rho));
+    varlist.push_back(varinfo("ustar", 2, false, &ustar));
+    varlist.push_back(varinfo("rho", 1, false, &rho));
     varlist.push_back(varinfo("nu", 1, false, &nu));
-    varlist.push_back(varinfo("uf", 2, true, &uf));
+    varlist.push_back(varinfo("uf", 2, false, &uf));
 
     varlist.push_back(varinfo("vof", 1, true, &vof));
-    varlist.push_back(varinfo("nb", 2, true, &nb));
+    varlist.push_back(varinfo("nb", 2, false, &nb));
 }
 
 void domain::write_vtk(std::string file_name)
@@ -126,21 +126,21 @@ void domain::write_vtk(std::string file_name)
     file.close();
 }
 
-double *domain::extract_scalars(mesh_row *row, double *var)
+double *domain::extract_scalars(row *r, double *var)
 {
-    double *result = new double[row->n];
-    for (size_t i = 0; i < row->n; ++i)
-        result[i] = var[cellno(row, i)];
+    double *result = new double[r->n];
+    for (size_t i = 0; i < r->n; ++i)
+        result[i] = var[cellno(r, i)];
     return result;
 }
 
-void domain::insert_scalars(mesh_row *row, double *var, double *row_vals)
+void domain::insert_scalars(row *r, double *var, double *row_vals)
 {
-    for (size_t i = 0; i < row->n; ++i)
-        var[cellno(row, i)] = row_vals[i];
+    for (size_t i = 0; i < r->n; ++i)
+        var[cellno(r, i)] = row_vals[i];
 }
 
-vector *domain::extract_vectors(mesh_row *row, double **var)
+vector *domain::extract_vectors(row *row, double **var)
 {
     vector *result = new vector[row->n];
     for (size_t i = 0; i < row->n; ++i)
@@ -148,7 +148,7 @@ vector *domain::extract_vectors(mesh_row *row, double **var)
     return result;
 }
 
-void domain::insert_vectors(mesh_row *row, double **var, vector *row_vals)
+void domain::insert_vectors(row *row, double **var, vector *row_vals)
 {
     for (size_t i = 0; i < row->n; ++i)
     {
@@ -159,7 +159,7 @@ void domain::insert_vectors(mesh_row *row, double **var, vector *row_vals)
     }
 }
 
-size_t *domain::get_row_cellnos(mesh_row *row)
+size_t *domain::get_row_cellnos(row *row)
 {
     size_t *row_idxs = new size_t[row->n];
     for (size_t i = 0; i < row->n; ++i)

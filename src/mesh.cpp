@@ -52,8 +52,8 @@ bool mesh::exists_and_inside(size_t i, size_t j, size_t k, size_t &no)
 void mesh::generate_rows(size_t dir)
 {
     bool inside = false;
-    mesh_row row;
-    std::vector<mesh_row> v;
+    row r;
+    std::vector<row> v;
     size_t ii , jj, kk;
     get_dirs(dir, ii, jj, kk);
 
@@ -66,27 +66,27 @@ void mesh::generate_rows(size_t dir)
                 {
                     if (codes[x] != INSIDE) continue;
                     inside = true;
-                    row.dir = dir;
-                    row.start[ii] = i;
-                    row.start[jj] = j;
-                    row.start[kk] = k;
-                    row.start_code = codes[idx(i - 1, j, k, ii, jj, kk)];
+                    r.dir = dir;
+                    r.start[ii] = i;
+                    r.start[jj] = j;
+                    r.start[kk] = k;
+                    r.start_code = codes[idx(i - 1, j, k, ii, jj, kk)];
                 }
                 else
                 {
                     if (codes[x] == INSIDE) continue;
                     inside = false;
-                    row.end[ii] = i - 1;
-                    row.end[jj] = j;
-                    row.end[kk] = k;
-                    row.n = row.end[ii] - row.start[ii] + 1;
-                    row.end_code = codes[x];
-                    v.push_back(row);
+                    r.end[ii] = i - 1;
+                    r.end[jj] = j;
+                    r.end[kk] = k;
+                    r.n = r.end[ii] - r.start[ii] + 1;
+                    r.end_code = codes[x];
+                    v.push_back(r);
                 }
             }
 
     nrows[dir] = v.size();
-    rows[dir] = new mesh_row[nrows[dir]];
+    rows[dir] = new row[nrows[dir]];
     for (int i = 0; i < nrows[dir]; ++i)
         rows[dir][i] = v[i];
 }
@@ -137,6 +137,10 @@ mesh::mesh(Json::Value *root)
     strcpy(codes, str.c_str());
 
     init();
+
+    vcell = delta * delta * delta;
+    aface = delta * delta;
 }
 
 }
+

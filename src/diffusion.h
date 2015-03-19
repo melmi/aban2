@@ -20,15 +20,13 @@ namespace aban2
 class diffusion
 {
 private:
-	domain* d;
+    domain* d;
 
     static void solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c);
 
 public:
     diffusion(domain *_d): d(_d) {}
-
-    void diffuse(mesh_row *row, double *phi, double* D, flowbc::member mem);
-
+    void diffuse(mesh::row *row, double *phi, double* D, flowbc::member mem);
     void diffuse_ustar();
 };
 

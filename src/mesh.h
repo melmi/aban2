@@ -19,30 +19,31 @@
 namespace aban2
 {
 
-struct mesh_row
-{
-    size_t dir;
-    size_t n;
-    size_t start[3], end[3];
-    char start_code, end_code;
-};
-
 class mesh
 {
 public:
+    struct row
+    {
+        size_t dir;
+        size_t n;
+        size_t start[3], end[3];
+        char start_code, end_code;
+    };
+
     size_t n, ndir[3];
     double delta;
+    double vcell, aface;
     char *codes;
     size_t *cellnos;
     size_t nrows[3];
     static const char INSIDE = ' ';
-    mesh_row *rows[3];
+    row *rows[3];
 
     inline size_t idx(size_t i, size_t j, size_t k)
     {
         return k * ndir[1] + j * ndir[0] + i;
     }
-    inline size_t cellno(mesh_row *r, size_t i)
+    inline size_t cellno(row *r, size_t i)
     {
         r->start[r->dir] += i;
         size_t result = cellnos[idx(r->start[0], r->start[1], r->start[2])];
@@ -67,3 +68,4 @@ public:
 }
 
 #endif
+

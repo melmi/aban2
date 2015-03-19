@@ -10,7 +10,7 @@
 namespace aban2
 {
 
-void gradient::add_1d_row(domain *d, mesh_row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc)
+void gradient::add_1d_row(domain *d, mesh::row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc)
 {
     double *phi_row = d->extract_scalars(row, phi);
     double *grad_row = d->extract_scalars(row, grad_dir);
@@ -31,7 +31,7 @@ void gradient::add_1d_row(domain *d, mesh_row *row, double *phi, double *grad_di
     delete[] grad_row;
 }
 
-double *gradient::of_scalar_dir_oriented(domain *d, double *phi, flowbc::bc_val_getter bc, size_t dir)
+double *gradient::of_scalar_dir(domain *d, double *phi, flowbc::bc_val_getter bc, size_t dir)
 {
     double *result = (double *)d->create_var(1);
     for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
@@ -44,11 +44,11 @@ double **gradient::of_scalar(domain *d, double *phi, flowbc::bc_val_getter bc)
     double **result = new double*[3];
     result[2] = nullptr;
     for (size_t dir = 0; dir < NDIRS; ++dir)
-        result[dir] = of_scalar_dir_oriented(d, phi, bc, dir);
+        result[dir] = of_scalar_dir(d, phi, bc, dir);
     return result;
 }
 
-double ** *gradient::of_vec(domain *d, double **phi, flowbc::bc_val_getter bc[3])
+double ***gradient::of_vec(domain *d, double **phi, flowbc::bc_val_getter bc[3])
 {
     double ***result = new double **[3];
     result[2] = nullptr;
@@ -80,7 +80,7 @@ double *avg_uf(domain *d, size_t dir)
     return result;
 }
 
-double *grad_uf_dir(domain *d, size_t dir)
+double *gradient::of_uf_dir(domain *d, size_t dir)
 {
     double *result = new double[d->n];
 
@@ -103,7 +103,7 @@ double *grad_uf_dir(domain *d, size_t dir)
     return result;
 }
 
-double ** *gradient::of_uf(domain *d)
+double ***gradient::of_uf(domain *d)
 {
     double *avg[3]
     {
@@ -118,7 +118,7 @@ double ** *gradient::of_uf(domain *d)
     {
         result[icmpnt] = of_scalar(d, avg[icmpnt], flowbc::bc_u_getter[icmpnt]);
         delete[] result[icmpnt][icmpnt];
-        result[icmpnt][icmpnt] = grad_uf_dir(d, icmpnt);
+        result[icmpnt][icmpnt] = of_uf_dir(d, icmpnt);
     }
 
     delete[] avg[0];
@@ -128,7 +128,20 @@ double ** *gradient::of_uf(domain *d)
     return result;
 }
 
-double *gradient::divergance(domain *d, double **phi, flowbc::bc_val_getter bc[3])
+double *gradient::divergance(domain *d)
+{
+    double *result = (double *)d->create_var(1);
+    for (size_t dir = 0; dir < NDIRS; ++dir)
+    {
+        auto g_dir = of_uf_dir(d, dir);
+        for (int i = 0; i < d->n; ++i) result[i] += g_dir[i] * d->aface;
+        delete[] g_dir;
+    }
+    for (int i = 0; i < d->n; ++i) result[i] /= d->vcell;
+    return result;
+}
+
+double *gradient::divergance_of(domain *d, double **phi, flowbc::bc_val_getter bc[3])
 {
     double *result = (double *)d->create_var(1);
     for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)

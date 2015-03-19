@@ -10,12 +10,10 @@
 
 #include "common.h"
 #include "bcondition.h"
+#include "domain.h"
 
 namespace aban2
 {
-
-class domain;
-class mesh_row;
 
 class advection
 {
@@ -24,7 +22,7 @@ class advection
 public:
     advection(domain *_d): d(_d) {}
 
-    void advect(mesh_row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc);
+    void advect(mesh::row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc);
 
     void advect_ustar();
 };

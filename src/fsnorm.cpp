@@ -10,7 +10,6 @@ namespace aban2
 
 fsnorm::fsnorm(aban2::domain *_d): d(_d)
 {
-    vcell = d->delta * d->delta * d->delta;
 }
 
 fsnorm::~fsnorm()

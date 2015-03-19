@@ -10,8 +10,6 @@ namespace aban2
 
 vof::vof(aban2::domain *_d): d(_d), _fsnorm(_d)
 {
-    vcell = d->delta * d->delta * d->delta;
-    aface = d->delta * d->delta;
     mass = new double[d->n];
     rhou0[0] = new double[d->n];
     rhou0[1] = new double[d->n];
@@ -112,7 +110,7 @@ void vof::delete_reconsts()
         }
 }
 
-std::tuple<double, vector, vector> vof::get_flux(mesh_row *row, size_t i, double udt, double ***grad_ustar)
+std::tuple<double, vector, vector> vof::get_flux(mesh::row *row, size_t i, double udt, double ***grad_ustar)
 {
     size_t no = d->cellno(row, i);
     double v0, v1, vt, c;
@@ -159,7 +157,7 @@ std::tuple<double, vector, vector> vof::get_flux(mesh_row *row, size_t i, double
     return std::make_tuple(v1, flux_ustar0, flux_ustar1);
 }
 
-std::tuple<double, vector, vector> vof::get_bc_flux(mesh_row *row, double ***grad_ustar, bcside side)
+std::tuple<double, vector, vector> vof::get_bc_flux(mesh::row *row, double ***grad_ustar, bcside side)
 {
     size_t i = side == bcside::start ? 0 : row->n - 1;
     double uf_b = flowbc::bc_u_getter[row->dir](d, row, d->u[row->dir], side);
@@ -174,14 +172,14 @@ std::tuple<double, vector, vector> vof::get_bc_flux(mesh_row *row, double ***gra
         flowbc::bc_u_getter[2](d, row, d->ustar[2], side)
     };
 
-    double v = aface * uf_b * d->dt;
+    double v = d->aface * uf_b * d->dt;
     return std::make_tuple(
                vof_b * v,
                d->rho0 * vof_b * v * ustar_b,
                d->rho1 * (1.0 - vof_b) * v * ustar_b);
 }
 
-void vof::advect_row(mesh_row *row, double ***grad_ustar)
+void vof::advect_row(mesh::row *row, double ***grad_ustar)
 {
     size_t n = row->n;
     double *row_uf = d->extract_scalars(row, d->uf[row->dir]);
@@ -259,7 +257,7 @@ void vof::correct_vofs(double *grad_uf_dir)
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
         if (d->vof[i] > 0.5)
-            mass[i] += grad_uf_dir[i] * vcell * d->dt;
+            mass[i] += grad_uf_dir[i] * d->vcell * d->dt;
 }
 
 void vof::calculate_normals()
@@ -277,7 +275,7 @@ void vof::calculate_normals()
 void vof::calculate_vof_masses_from_vars()
 {
     for (size_t i = 0; i < d->n; ++i)
-        mass[i] = d->vof[i] * vcell;
+        mass[i] = d->vof[i] * d->vcell;
 }
 
 void vof::calculate_ustar_masses_from_vars(double ***grad_ustar)
@@ -290,7 +288,7 @@ void vof::calculate_ustar_masses_from_vars(double ***grad_ustar)
         {
             double v1 = reconsts[i]->get_volume();
             vector q1 = reconsts[i]->get_moments();
-            double v0 = vcell - v1;
+            double v0 = d->vcell - v1;
             vector q0 = -q1;
 
             vector grad[]
@@ -310,8 +308,8 @@ void vof::calculate_ustar_masses_from_vars(double ***grad_ustar)
         else
         {
             double _vof = d->vof[i];
-            rhou0p = (1.0 - _vof) * d->rho0 * ustar * vcell;
-            rhou1p = _vof * d->rho1 * ustar * vcell;
+            rhou0p = (1.0 - _vof) * d->rho0 * ustar * d->vcell;
+            rhou1p = _vof * d->rho1 * ustar * d->vcell;
         }
 
         rhou0p.to_data(rhou0, i);
@@ -323,18 +321,17 @@ void vof::calculate_vars_from_masses()
 {
     for (size_t i = 0; i < d->n; ++i)
     {
-        d->vof[i] = mass[i] / vcell;
+        d->vof[i] = mass[i] / d->vcell;
         d->rho[i] = d->rho_bar(d->vof[i]);
-        d->ustar[0][i] = (rhou0[0][i] / d->rho0 + rhou1[0][i] / d->rho1) / vcell;
-        d->ustar[1][i] = (rhou0[1][i] / d->rho0 + rhou1[1][i] / d->rho1) / vcell;
-        d->ustar[2][i] = (rhou0[2][i] / d->rho0 + rhou1[2][i] / d->rho1) / vcell;
+        d->ustar[0][i] = (rhou0[0][i] / d->rho0 + rhou1[0][i] / d->rho1) / d->vcell;
+        d->ustar[1][i] = (rhou0[1][i] / d->rho0 + rhou1[1][i] / d->rho1) / d->vcell;
+        d->ustar[2][i] = (rhou0[2][i] / d->rho0 + rhou1[2][i] / d->rho1) / d->vcell;
     }
 }
 
 void vof::advect()
 {
     start_dir = (start_dir + 1) % NDIRS;
-    auto grad_uf = gradient::of_uf(d);
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
     {
@@ -354,7 +351,9 @@ void vof::advect()
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
             advect_row(d->rows[dir] + irow, grad_ustar);
 
-        correct_vofs(grad_uf[dir][dir]);
+        auto grad_uf = gradient::of_uf_dir(d, dir);
+        correct_vofs(grad_uf);
+        delete[] grad_uf;
 
         // average
         calculate_vars_from_masses();
@@ -362,8 +361,6 @@ void vof::advect()
         delete_reconsts();
         domain::delete_var(3, grad_ustar);
     }
-
-    domain::delete_var(3, grad_uf);
 }
 
 int vof_err::is_inside(vector n, double alpha, vector x)

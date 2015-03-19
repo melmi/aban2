@@ -67,7 +67,7 @@ public:
         return
         {
             1,
-            - (u_bc - vector::from_data(d->ustar, cellno)).cmpnt[dir] *d->rho[cellno] / d->dt,
+            0,//- (u_bc - vector::from_data(d->ustar, cellno)).cmpnt[dir] *d->rho[cellno] / d->dt,
             0
         };
     }
@@ -123,7 +123,7 @@ flowbc::~flowbc()
     delete vof;
 }
 
-double face_val(domain *d, mesh_row *row, double *phi, flowbc::member mem, bcside side)
+double face_val(domain *d, mesh::row *row, double *phi, flowbc::member mem, bcside side)
 {
     if (side == bcside::start)
     {
@@ -139,7 +139,7 @@ double face_val(domain *d, mesh_row *row, double *phi, flowbc::member mem, bcsid
     }
 }
 
-double rho_u_face_val(domain *d, mesh_row *row, double *phi, bcside side, size_t dir)
+double rho_u_face_val(domain *d, mesh::row *row, double *phi, bcside side, size_t dir)
 {
     double uf = face_val(d, row, d->u[dir], flowbc::umembers[dir], side);
     double vof = face_val(d, row, d->vof, &flowbc::vof, side);
