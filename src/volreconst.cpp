@@ -41,6 +41,8 @@ volreconst *volreconst::from_base_data(vector _c, vector _m)
     case 3:
         result = new volreconst3d();
         break;
+    default:
+        return nullptr;
     }
 
     result->c = _c;
@@ -55,22 +57,15 @@ volreconst *volreconst::from_base_data(vector _c, vector _m)
 
 void volreconst::set_alpha()
 {
-    double v0 = 0, v1 = c.x * c.y * c.z;
     double a0 = 0, a1 = alpha_max;
     while (std::abs(a0 - a1) > epsilon)
     {
         double anew = (a0 + a1) / 2.0;
         double vnew = this->get_volume(anew);
         if (volume > vnew)
-        {
             a0 = anew;
-            v0 = vnew;
-        }
         else
-        {
             a1 = anew;
-            v1 = vnew;
-        }
     }
     alpha = a0;
 }
@@ -191,7 +186,7 @@ double volreconst2d::get_moment(size_t dir)
 
     double result = x2(alpha) * ((alpha / m.cmpnt[dir] / 3.0));
 
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
         if (has_elem[i])
         {
             double d1 = i == dir ? c.cmpnt[i] : 0;
@@ -232,7 +227,7 @@ double volreconst3d::get_moment(size_t dir)
 
     double result = x3(alpha) * ((alpha / m.cmpnt[dir] / 3.0));
 
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
         double d1 = i == dir ? c.cmpnt[i] : 0;
         double r1 = alpha - m.cmpnt[i] * c.cmpnt[i];

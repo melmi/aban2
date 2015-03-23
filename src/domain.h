@@ -50,6 +50,7 @@ public:
 
     static domain *create_from_file(std::string file_name);
     domain(Json::Value *root);
+    ~domain();
     virtual void register_vars();
     void write_vtk(std::string file_name);
     double *extract_scalars(row *r, double *var);
@@ -71,4 +72,3 @@ private:
 }
 
 #endif
-

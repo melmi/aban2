@@ -95,14 +95,14 @@ void vof::create_reconsts()
 {
     vector c {d->delta, d->delta, d->delta};
 
-    for (int i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < d->n; ++i)
         if (on_interface[i])
             reconsts[i] = volreconst::from_volume(c, -vector::from_data(d->nb, i), mass[i]);
 }
 
 void vof::delete_reconsts()
 {
-    for (int i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < d->n; ++i)
         if (reconsts[i] != nullptr)
         {
             delete reconsts[i];

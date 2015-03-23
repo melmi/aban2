@@ -44,11 +44,21 @@ domain::domain(Json::Value *root): mesh(root)
     write_interval = root->get("write_interval", 1).asInt();
 
     boundaries = new flowbc*[256];
+    std::fill_n(boundaries, 256, nullptr);
     Json::Value boundaries_val = (*root)["boundaries"];
     flowbc::create_bcs(&boundaries_val, boundaries, this);
 
     register_vars();
     create_vars();
+}
+
+domain::~domain()
+{
+    for (int i = 0; i < 256; ++i)
+        if (boundaries[i] != nullptr)
+            delete boundaries[i];
+    delete[] boundaries;
+    delete_vars();
 }
 
 void domain::register_vars()
@@ -75,21 +85,21 @@ void domain::write_vtk(std::string file_name)
     file << "DATASET RECTILINEAR_GRID" << std::endl;
     file << "DIMENSIONS " << ndir[0] + 1 << " " << ndir[1] + 1 << " " << ndir[2] + 1 << std::endl;
     file << "X_COORDINATES " << ndir[0] + 1 << " float" << std::endl;
-    for (int i = 0; i < ndir[0] + 1; ++i)file << (double)i *delta << " ";
+    for (size_t i = 0; i < ndir[0] + 1; ++i)file << (double)i *delta << " ";
     file << std::endl;
     file << "Y_COORDINATES " << ndir[1] + 1 << " float" << std::endl;
-    for (int i = 0; i < ndir[1] + 1; ++i)file << (double)i *delta << " ";
+    for (size_t i = 0; i < ndir[1] + 1; ++i)file << (double)i *delta << " ";
     file << std::endl;
     file << "Z_COORDINATES " << ndir[2] + 1 << " float" << std::endl;
-    for (int i = 0; i < ndir[2] + 1; ++i)file << (double)i *delta << " ";
+    for (size_t i = 0; i < ndir[2] + 1; ++i)file << (double)i *delta << " ";
     file << std::endl;
 
     file << "CELL_DATA " << ndir[0] *ndir[1] *ndir[2] << std::endl;
     file << "SCALARS existence int" << std::endl;
     file << "LOOKUP_TABLE default" << std::endl;
-    for (int k = 0; k < ndir[2]; ++k)
-        for (int j = 0; j < ndir[1]; ++j)
-            for (int i = 0; i < ndir[0]; ++i)
+    for (size_t k = 0; k < ndir[2]; ++k)
+        for (size_t j = 0; j < ndir[1]; ++j)
+            for (size_t i = 0; i < ndir[0]; ++i)
                 file << (exists(i, j, k) ? 1 : 0) << std::endl;
 
     for (auto &v : varlist)
@@ -99,9 +109,9 @@ void domain::write_vtk(std::string file_name)
             case 1:
                 file << "SCALARS " << v.name << " double" << std::endl;
                 file << "LOOKUP_TABLE default" << std::endl;
-                for (int k = 0; k < ndir[2]; ++k)
-                    for (int j = 0; j < ndir[1]; ++j)
-                        for (int i = 0; i < ndir[0]; ++i)
+                for (size_t k = 0; k < ndir[2]; ++k)
+                    for (size_t j = 0; j < ndir[1]; ++j)
+                        for (size_t i = 0; i < ndir[0]; ++i)
                         {
                             size_t x = idx(i, j, k);
                             double val = 0;
@@ -111,9 +121,9 @@ void domain::write_vtk(std::string file_name)
                 break;
             case 2:
                 file << "VECTORS " << v.name << " double" << std::endl;
-                for (int k = 0; k < ndir[2]; ++k)
-                    for (int j = 0; j < ndir[1]; ++j)
-                        for (int i = 0; i < ndir[0]; ++i)
+                for (size_t k = 0; k < ndir[2]; ++k)
+                    for (size_t j = 0; j < ndir[1]; ++j)
+                        for (size_t i = 0; i < ndir[0]; ++i)
                         {
                             size_t x = idx(i, j, k);
                             vector val;

@@ -254,7 +254,7 @@ vector fsnorm::get_normal(size_t i, size_t j, size_t k, size_t no)
     if (c_ok[0] || c_ok[1] || c_ok[2])
     {
         double m0[] {0, 0, 0};
-        size_t selected_dir = -1;
+        int selected_dir = -1;
         for (size_t i = 0; i < 3; ++i)
             if (c_ok[i])
             {
@@ -283,4 +283,3 @@ vector fsnorm::get_normal(size_t i, size_t j, size_t k, size_t no)
     return *final;
 }
 }
-

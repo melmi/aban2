@@ -63,9 +63,9 @@ private:
 
 public:
     mesh(Json::Value *root);
+    virtual ~mesh();
 };
 
 }
 
 #endif
-

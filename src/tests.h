@@ -65,9 +65,9 @@ string rowtostr(mesh::row *r)
 
 void print_cell_nos(domain *d)
 {
-    for (int i = d->ndir[0] - 1; i > 0; --i)
+    for (size_t i = d->ndir[0] - 1; i > 0; --i)
     {
-        for (int j = 1; j < d->ndir[1] - 1; ++j)
+        for (size_t j = 1; j < d->ndir[1] - 1; ++j)
         {
             size_t x = d->idx(i, j, 0);
             cout.width(4);
@@ -92,7 +92,7 @@ void print_rows(domain *d)
             cout << rowtostr(row) << endl;
 
             // auto a = d->get_row_idxs(row);
-            for (int i = 0; i < row->n; ++i)
+            for (size_t i = 0; i < row->n; ++i)
                 cout << d->cellno(row, i) << " ";
             // cout << a[i] << " ";
             cout << endl;
@@ -126,9 +126,9 @@ std::size_t min_element_index ( I first, I last )
 void adv_test1(domain *d)
 {
     double x0 = 51, y0 = 51;
-    for (int i = 0; i < d->ndir[0]; ++i)
-        for (int j = 0; j < d->ndir[1]; ++j)
-            for (int k = 0; k < d->ndir[2]; ++k)
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            for (size_t k = 0; k < d->ndir[2]; ++k)
                 if (d->exists(i, j, k))
                 {
                     size_t ix = d->cellnos[d->idx(i, j, k)];
@@ -136,7 +136,7 @@ void adv_test1(domain *d)
                     d->u[0][ix] = d->u[1][ix] = d->u[2][ix] = 1;
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
-                    double z = k * d->delta + d->delta / 2.0;
+                    /* double z = k * d->delta + d->delta / 2.0; */
                     double phi = exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
                     d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
                 }
@@ -145,16 +145,16 @@ void adv_test1(domain *d)
 void diff_test1(domain *d)
 {
     double x0 = 21, y0 = 21;
-    for (int i = 0; i < d->ndir[0]; ++i)
-        for (int j = 0; j < d->ndir[1]; ++j)
-            for (int k = 0; k < d->ndir[2]; ++k)
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            for (size_t k = 0; k < d->ndir[2]; ++k)
                 if (d->exists(i, j, k))
                 {
                     size_t ix = d->cellnos[d->idx(i, j, k)];
                     // cout<<ix<<endl<<flush;
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
-                    double z = k * d->delta + d->delta / 2.0;
+                    /* double z = k * d->delta + d->delta / 2.0; */
                     double phi =  exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
                     d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
                 }
@@ -202,7 +202,7 @@ void fill_func(domain *d, double *phi, std::function<double(vector)> f);
 void zalesak_disk_rotation_test()
 {
     domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    for (int i = 0; i < d->n; ++i) d->p[i] = i;
+    for (size_t i = 0; i < d->n; ++i) d->p[i] = i;
 
     vof *_vof = new vof(d);
     fill_func(d, d->uf[1], [](vector x) {return -0.004;});
@@ -215,7 +215,7 @@ void zalesak_disk_rotation_test()
     });
     square(d, {0.5, 0.75, 0}, 0.15);
     // zalesak_disk(d);
-    for (int i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+    for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
 
     _vof->calculate_normals();
     d->write_vtk("out/zalesak0.vtk");
@@ -322,7 +322,7 @@ void zalesak_disk(domain *d)
 void fill_func(domain *d, double *phi, std::function<double(vector)> f)
 {
     size_t no;
-    double h_2 = d->delta / 2.0;
+    /* double h_2 = d->delta / 2.0; */
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->exists(i, j, 0, no))

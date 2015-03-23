@@ -57,8 +57,8 @@ void diffusion::diffuse(mesh::row *row, double *phi, double *D, flowbc::member m
         bb[i] = 1.0 + 2.0 * d_row[i] * dt_dx2;
     }
 
-    auto startbc = (d->boundaries[row->start_code]->*mem)->desc(d->cellno(row, 0         ), row->dir);
-    auto endbc   = (d->boundaries[row->end_code  ]->*mem)->desc(d->cellno(row, row->n - 1), row->dir);
+    auto startbc = (d->boundaries[(int)row->start_code]->*mem)->desc(d->cellno(row, 0         ), row->dir);
+    auto endbc   = (d->boundaries[(int)row->end_code  ]->*mem)->desc(d->cellno(row, row->n - 1), row->dir);
 
     bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * d_row[0] * dt_dx2;
     phi_row[0] += 2.0 * d_row[0] * dt_dx2 * startbc.cte;

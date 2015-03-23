@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
     // std::iota(d->no, d->no + d->n, 0);
     rectangel(d, {0.1, 0.2, 0}, {0.2, 0.4, 0}, 1);
     // rectangel(d, {0.5, 0.5, 0}, {5, 0.6, 0}, 1);
-    for (int i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < d->n; ++i)
     {
         d->rho[i] = d->rho_bar(d->vof[i]);
         d->nu[i] = d->nu_bar(d->vof[i]);
@@ -37,15 +37,15 @@ int main(int argc, char const *argv[])
 
     /* zalesak_disk_rotation_test(); */
 
-    if (false)
-    {
-        auto v = aban2::volreconst::from_alpha({2, 2, 2}, {1, 0, 0}, 0.6);
-        std::cout << "{" << std::endl
-                  /* << "\tc: " << v->c << "," << std::endl */
-                  /* << "\tm: " << v->m << "," << std::endl */
-                  /* << "\tvolume: { expected: " << 2.4 << ", calculated: " << v->volume << " }" << std::endl */
-                  << "}" << std::endl;
-    }
+    /* if (false) */
+    /* { */
+    /*     auto v = aban2::volreconst::from_alpha({2, 2, 2}, {1, 0, 0}, 0.6); */
+    /*     std::cout << "{" << std::endl */
+    /*               << "\tc: " << v->c << "," << std::endl */
+    /*               << "\tm: " << v->m << "," << std::endl */
+    /*               << "\tvolume: { expected: " << 2.4 << ", calculated: " << v->volume << " }" << std::endl */
+    /*               << "}" << std::endl; */
+    /* } */
 
     return 0;
 }

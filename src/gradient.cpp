@@ -134,10 +134,10 @@ double *gradient::divergance(domain *d)
     for (size_t dir = 0; dir < NDIRS; ++dir)
     {
         auto g_dir = of_uf_dir(d, dir);
-        for (int i = 0; i < d->n; ++i) result[i] += g_dir[i] * d->aface;
+        for (size_t i = 0; i < d->n; ++i) result[i] += g_dir[i] * d->aface;
         delete[] g_dir;
     }
-    for (int i = 0; i < d->n; ++i) result[i] /= d->vcell;
+    for (size_t i = 0; i < d->n; ++i) result[i] /= d->vcell;
     return result;
 }
 

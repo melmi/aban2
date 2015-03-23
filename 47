@@ -44,7 +44,7 @@ void solver::step()
 
     std::cout << "      advection " << std::endl;
     _vof->advect();
-    for (size_t i = 0; i < d->n; ++i)
+    for (int i = 0; i < d->n; ++i)
         d->nu[i] = d->nu_bar(d->vof[i]);
     std::cout << "      diffusion " << std::endl;
     diffusor->diffuse_ustar();
@@ -68,7 +68,7 @@ double solver::divergance()
     auto grad_uf = gradient::of_uf(d);
 
     double result = 0;
-    for (size_t i = 0; i < d->n; ++i)
+    for (int i = 0; i < d->n; ++i)
     #ifdef THREE_D
         result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i] + grad_uf[2][2][i]);
     #else
@@ -82,11 +82,11 @@ double solver::divergance()
 
 void solver::run(size_t nsteps)
 {
-    for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+    for (int i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
         
     write_step(0);
 
-    for (size_t it = 0; it < nsteps; ++it)
+    for (int it = 0; it < nsteps; ++it)
     {
         std::cout << "running step " << it + 1
                   << std::endl << std::flush;

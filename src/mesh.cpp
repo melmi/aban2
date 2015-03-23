@@ -87,7 +87,7 @@ void mesh::generate_rows(size_t dir)
 
     nrows[dir] = v.size();
     rows[dir] = new row[nrows[dir]];
-    for (int i = 0; i < nrows[dir]; ++i)
+    for (size_t i = 0; i < nrows[dir]; ++i)
         rows[dir][i] = v[i];
 }
 
@@ -95,9 +95,9 @@ void mesh::set_cell_nos()
 {
     size_t ii = 0;
     cellnos = new size_t[ndir[0] * ndir[1] * ndir[2]];
-    for (int i = 0; i < ndir[0]; ++i)
-        for (int j = 0; j < ndir[1]; ++j)
-            for (int k = 0; k < ndir[2]; ++k)
+    for (size_t i = 0; i < ndir[0]; ++i)
+        for (size_t j = 0; j < ndir[1]; ++j)
+            for (size_t k = 0; k < ndir[2]; ++k)
             {
                 size_t x = idx(i, j, k);
                 if (codes[x] == INSIDE)
@@ -110,7 +110,7 @@ void mesh::init()
 {
     nrows[0] = nrows[1] = nrows[2] = 0;
 
-    for (int dir = 0; dir < NDIRS; ++dir)
+    for (size_t dir = 0; dir < NDIRS; ++dir)
         generate_rows(dir);
 
     set_cell_nos();
@@ -142,5 +142,11 @@ mesh::mesh(Json::Value *root)
     aface = delta * delta;
 }
 
+mesh::~mesh()
+{
+    delete[] codes;
+    delete[] cellnos;
+    for (int i = 0; i < NDIRS; ++i) delete[] rows[i];
 }
 
+}

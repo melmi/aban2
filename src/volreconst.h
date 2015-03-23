@@ -43,6 +43,7 @@ protected:
     virtual double get_volume(double _alpha) = 0;
     volreconst *get_cut(size_t dir, double delta);
 public:
+    virtual ~volreconst() {}
     double get_volume();
     double get_alpha();
     vector get_moments();
@@ -82,3 +83,4 @@ public:
 }
 
 #endif
+

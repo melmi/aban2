@@ -51,8 +51,8 @@ void projection::add_row(matrix_t *pmatrix, mesh::row *row)
         pmatrix->AddInteraction(no_p, no_e, +h2inv * _rho_f_e);
     }
 
-    auto desc_start = d->boundaries[row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
-    auto desc_end   = d->boundaries[row->end_code  ]->p->desc(d->cellno(row, row->n - 1), row->dir);
+    auto desc_start = d->boundaries[(int)row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
+    auto desc_end   = d->boundaries[(int)row->end_code  ]->p->desc(d->cellno(row, row->n - 1), row->dir);
     double rho_start = d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::start));
     double rho_end   = d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::end  ));
     apply_row_bc(pmatrix, row_cellnos[0    ], row_cellnos[1    ], desc_start, rho_start);
@@ -78,7 +78,7 @@ void projection::apply_row_bc(matrix_t *pmatrix, size_t no0 , size_t no1, bcdesc
 double *projection::get_rhs()
 {
     auto rhs = gradient::divergance_of(d, d->ustar, flowbc::bc_u_getter);
-    for (int i = 0; i < d->n; ++i) rhs[i] /= d->dt;
+    for (size_t i = 0; i < d->n; ++i) rhs[i] /= d->dt;
     apply_rhs_bc(rhs);
     return rhs;
 }
@@ -93,8 +93,8 @@ void projection::apply_rhs_bc(double *rhs)
             size_t cellno_start = d->cellno(row, 0);
             size_t cellno_end   = d->cellno(row, row->n - 1);
 
-            auto bcdesc_start = d->boundaries[row->start_code]->p->desc(cellno_start, row->dir);
-            auto bcdesc_end   = d->boundaries[row->end_code  ]->p->desc(cellno_end  , row->dir);
+            auto bcdesc_start = d->boundaries[(int)row->start_code]->p->desc(cellno_start, row->dir);
+            auto bcdesc_end   = d->boundaries[(int)row->end_code  ]->p->desc(cellno_end  , row->dir);
 
             double _rho_start = 1.0 / d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::start));
             double _rho_end   = 1.0 / d->rho_bar(flowbc::bc_vof_getter(d, row, d->vof, bcside::end  ));
@@ -182,7 +182,7 @@ void projection::update_u()
 {
     double **gradp = gradient_of_p(d);
 
-    for (int i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < d->n; ++i)
         for (int dir = 0; dir < NDIRS; ++dir)
             d->u[dir][i] = d->ustar[dir][i] - gradp[dir][i] * d->dt / d->rho[i];
 

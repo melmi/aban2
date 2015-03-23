@@ -84,7 +84,7 @@ void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
         Json::Value bc_node = (*bcroot)[bname];
         Json::Value bc_type = bc_node["type"].asString();
         Json::Value bc_val = bc_node["value"];
-        flowbc *bc;
+        flowbc *bc = nullptr;
 
         if (bc_type == "p")
         {
@@ -110,7 +110,7 @@ void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
             };
         }
 
-        boundaries[bname[0]] = bc;
+        boundaries[(int)bname[0]] = bc;
     }
 }
 
@@ -127,13 +127,13 @@ double face_val(domain *d, mesh::row *row, double *phi, flowbc::member mem, bcsi
 {
     if (side == bcside::start)
     {
-        auto bc = d->boundaries[row->start_code]->*mem;
+        auto bc = d->boundaries[(int)row->start_code]->*mem;
         auto cellno = d->cellno(row, 0);
         return bc->face_val(cellno, row->dir, phi, -d->delta / 2);
     }
     else
     {
-        auto bc = d->boundaries[row->end_code]->*mem;
+        auto bc = d->boundaries[(int)row->end_code]->*mem;
         auto cellno = d->cellno(row, row->n - 1);
         return bc->face_val(cellno, row->dir, phi, +d->delta / 2);
     }

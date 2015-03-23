@@ -32,6 +32,7 @@ protected:
     domain *d;
 public:
     bcondition(domain *_d): d(_d) {}
+    virtual ~bcondition() {}
     virtual bcdesc desc(size_t cellno, size_t dir) = 0;
     double face_val(size_t cellno, size_t dir, double *phi, double dx);
 
