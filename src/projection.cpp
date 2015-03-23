@@ -172,6 +172,7 @@ double **gradient_of_p(domain *d)
 
             d->insert_scalars(row, result[dir], grad_row);
             delete[] p_row;
+            delete[] rho_row;
             delete[] grad_row;
         }
     }

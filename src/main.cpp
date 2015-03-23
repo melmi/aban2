@@ -30,22 +30,22 @@ int main(int argc, char const *argv[])
 
     std::cout << "before run" << std::endl << std::flush;
     solver *s = new solver(d, "out/dmbrk");
-    s->run(50000);
+    s->run(2);
 
     delete s;
     delete d;
 
-    /* zalesak_disk_rotation_test(); */
+    // zalesak_disk_rotation_test();
 
-    /* if (false) */
-    /* { */
-    /*     auto v = aban2::volreconst::from_alpha({2, 2, 2}, {1, 0, 0}, 0.6); */
-    /*     std::cout << "{" << std::endl */
-    /*               << "\tc: " << v->c << "," << std::endl */
-    /*               << "\tm: " << v->m << "," << std::endl */
-    /*               << "\tvolume: { expected: " << 2.4 << ", calculated: " << v->volume << " }" << std::endl */
-    /*               << "}" << std::endl; */
-    /* } */
+    // if (false)
+    // {
+    //     auto v = aban2::volreconst::from_alpha({2, 2, 2}, {1, 0, 0}, 0.6);
+    //     std::cout << "{" << std::endl
+    //               << "\tc: " << v->c << "," << std::endl
+    //               << "\tm: " << v->m << "," << std::endl
+    //               << "\tvolume: { expected: " << 2.4 << ", calculated: " << v->volume << " }" << std::endl
+    //               << "}" << std::endl;
+    // }
 
     return 0;
 }

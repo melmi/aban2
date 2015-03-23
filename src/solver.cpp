@@ -75,7 +75,7 @@ double solver::divergance()
         result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i]);
     #endif
 
-    domain::delete_var(2, grad_uf);
+    domain::delete_var(3, grad_uf);
 
     return result;
 }
@@ -83,7 +83,7 @@ double solver::divergance()
 void solver::run(size_t nsteps)
 {
     for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
-        
+
     write_step(0);
 
     for (size_t it = 0; it < nsteps; ++it)
