@@ -30,6 +30,7 @@ class vof
     size_t start_dir = 0;
     double *mass;
     double *rhou0[3], *rhou1[3];
+    double *original_vof;
     fullness *fullnesses;
     bool *on_interface;
     volreconst **reconsts;

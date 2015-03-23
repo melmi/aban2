@@ -258,7 +258,7 @@ void vof::correct_vofs(size_t dir)
     
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
-        if (d->vof[i] > 0.5)
+        if (original_vof[i] > 0.5)
             mass[i] += grad_uf[i] * d->vcell * d->dt;
 
     delete[] grad_uf;
@@ -335,6 +335,9 @@ void vof::calculate_vars_from_masses()
 
 void vof::advect()
 {
+    original_vof = new double[d->n];
+    std::copy_n(d->vof, d->n, original_vof);
+
     start_dir = (start_dir + 1) % NDIRS;
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
@@ -363,6 +366,8 @@ void vof::advect()
         delete_reconsts();
         domain::delete_var(3, grad_ustar);
     }
+
+    delete[] original_vof;
 }
 
 int vof_err::is_inside(vector n, double alpha, vector x)
