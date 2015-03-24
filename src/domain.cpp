@@ -136,18 +136,18 @@ void domain::write_vtk(std::string file_name)
     file.close();
 }
 
-double *domain::extract_scalars(row *r, double *var)
+double *domain::extract_scalars(row *row, double *var)
 {
-    double *result = new double[r->n];
-    for (size_t i = 0; i < r->n; ++i)
-        result[i] = var[cellno(r, i)];
+    double *result = new double[row->n];
+    for (size_t i = 0; i < row->n; ++i)
+        result[i] = var[cellno(row, i)];
     return result;
 }
 
-void domain::insert_scalars(row *r, double *var, double *row_vals)
+void domain::insert_scalars(row *row, double *var, double *row_vals)
 {
-    for (size_t i = 0; i < r->n; ++i)
-        var[cellno(r, i)] = row_vals[i];
+    for (size_t i = 0; i < row->n; ++i)
+        var[cellno(row, i)] = row_vals[i];
 }
 
 vector *domain::extract_vectors(row *row, double **var)
@@ -246,4 +246,3 @@ double domain::nu_bar(double _vof)
 }
 
 }
-

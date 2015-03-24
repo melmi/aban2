@@ -39,17 +39,8 @@ public:
     static const char INSIDE = ' ';
     row *rows[3];
 
-    inline size_t idx(size_t i, size_t j, size_t k)
-    {
-        return k * ndir[1] + j * ndir[0] + i;
-    }
-    inline size_t cellno(row *r, size_t i)
-    {
-        r->start[r->dir] += i;
-        size_t result = cellnos[idx(r->start[0], r->start[1], r->start[2])];
-        r->start[r->dir] -= i;
-        return result;
-    }
+    size_t idx(size_t i, size_t j, size_t k);
+    size_t cellno(row *row, size_t i);
     bool exists(size_t i, size_t j, size_t k);
     bool exists(size_t i, size_t j, size_t k, size_t &no);
     bool exists_and_inside(size_t i, size_t j, size_t k, size_t &no);

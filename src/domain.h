@@ -53,7 +53,7 @@ public:
     ~domain();
     virtual void register_vars();
     void write_vtk(std::string file_name);
-    double *extract_scalars(row *r, double *var);
+    double *extract_scalars(row *row, double *var);
     void insert_scalars(row *row, double *var, double *row_vals);
     vector *extract_vectors(row *row, double **var);
     void insert_vectors(row *row, double **var, vector *row_vals);

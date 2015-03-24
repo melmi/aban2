@@ -10,6 +10,19 @@
 namespace aban2
 {
 
+size_t mesh::idx(size_t i, size_t j, size_t k)
+{
+    return k * ndir[1] + j * ndir[0] + i;
+}
+
+size_t mesh::cellno(row *row, size_t i)
+{
+    row->start[row->dir] += i;
+    size_t result = cellnos[idx(row->start[0], row->start[1], row->start[2])];
+    row->start[row->dir] -= i;
+    return result;
+}
+
 size_t mesh::idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk)
 {
     static size_t ijk[3];
@@ -52,8 +65,8 @@ bool mesh::exists_and_inside(size_t i, size_t j, size_t k, size_t &no)
 void mesh::generate_rows(size_t dir)
 {
     bool inside = false;
-    row r;
-    std::vector<row> v;
+    row row;
+    std::vector<struct row> v;
     size_t ii , jj, kk;
     get_dirs(dir, ii, jj, kk);
 
@@ -66,27 +79,27 @@ void mesh::generate_rows(size_t dir)
                 {
                     if (codes[x] != INSIDE) continue;
                     inside = true;
-                    r.dir = dir;
-                    r.start[ii] = i;
-                    r.start[jj] = j;
-                    r.start[kk] = k;
-                    r.start_code = codes[idx(i - 1, j, k, ii, jj, kk)];
+                    row.dir = dir;
+                    row.start[ii] = i;
+                    row.start[jj] = j;
+                    row.start[kk] = k;
+                    row.start_code = codes[idx(i - 1, j, k, ii, jj, kk)];
                 }
                 else
                 {
                     if (codes[x] == INSIDE) continue;
                     inside = false;
-                    r.end[ii] = i - 1;
-                    r.end[jj] = j;
-                    r.end[kk] = k;
-                    r.n = r.end[ii] - r.start[ii] + 1;
-                    r.end_code = codes[x];
-                    v.push_back(r);
+                    row.end[ii] = i - 1;
+                    row.end[jj] = j;
+                    row.end[kk] = k;
+                    row.n = row.end[ii] - row.start[ii] + 1;
+                    row.end_code = codes[x];
+                    v.push_back(row);
                 }
             }
 
     nrows[dir] = v.size();
-    rows[dir] = new row[nrows[dir]];
+    rows[dir] = new struct row[nrows[dir]];
     for (size_t i = 0; i < nrows[dir]; ++i)
         rows[dir][i] = v[i];
 }
