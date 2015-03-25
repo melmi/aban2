@@ -53,9 +53,24 @@ bool mesh::exists(size_t i, size_t j, size_t k, size_t &no)
     return true;
 }
 
-bool mesh::exists_and_inside(size_t i, size_t j, size_t k, size_t &no)
+bool inside_bounds(size_t x, int dx, size_t max)
 {
-    if (i < 0 || i >= ndir[0] || j < 0 || j >= ndir[1] || k < 0 || k >= ndir[2]) return false;
+    long xx = x;
+    xx += dx;
+    return xx >= 0 && xx <= (long)max;
+}
+
+bool mesh::exists_and_inside(size_t i, size_t j, size_t k, int di, int dj, int dk, size_t &no)
+{
+    bool inside = inside_bounds(i, di, ndir[0]) &&
+                  inside_bounds(j, dj, ndir[1]) &&
+                  inside_bounds(k, dk, ndir[2]);
+    if (!inside)return false;
+
+    i += di;
+    j += dj;
+    k += dk;
+
     size_t ix = idx(i, j, k);
     if (codes[ix] != INSIDE)return false;
     no = cellnos[ix];
@@ -163,3 +178,4 @@ mesh::~mesh()
 }
 
 }
+

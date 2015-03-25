@@ -25,12 +25,12 @@ fsnorm::neighbs_t fsnorm::get_nighb_vals(size_t i, size_t j, size_t k)
         for (int jj = 0; jj < 3; ++jj)
 #ifdef THREE_D
             for (int kk = 0; kk < 3; ++kk)
-                if (d->exists_and_inside(i + ii - 1, j + jj - 1, k + kk - 1, no))
+                if (d->exists_and_inside(i, j, k, ii - 1, jj - 1, kk - 1, no))
                     result[ii][jj][kk] = d->vof[no];
                 else
                     result[ii][jj][kk] = -1;
 #else
-            if (d->exists_and_inside(i + ii - 1, j + jj - 1, k, no))
+            if (d->exists_and_inside(i, j, k, ii - 1, jj - 1, k, no))
                 result[ii][jj][0] = result[ii][jj][1] = result[ii][jj][2] = d->vof[no];
             else
                 result[ii][jj][0] = result[ii][jj][1] = result[ii][jj][2] = -1;
@@ -283,3 +283,4 @@ vector fsnorm::get_normal(size_t i, size_t j, size_t k, size_t no)
     return *final;
 }
 }
+

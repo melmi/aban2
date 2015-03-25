@@ -36,7 +36,7 @@ class vof
     volreconst **reconsts;
 
     void set_fullnesses();
-    inline bool is_empty(size_t i, size_t j, size_t k);
+    inline bool is_empty(size_t i, size_t j, size_t k, int di, int dj, int dk);
     bool is_on_interface(size_t i, size_t j, size_t k, size_t no);
     void detect_interfacial_cells();
     // void calculate_normals();

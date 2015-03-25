@@ -139,13 +139,13 @@ double face_val(domain *d, mesh::row *row, double *phi, flowbc::member mem, bcsi
     }
 }
 
-double rho_u_face_val(domain *d, mesh::row *row, double *phi, bcside side, size_t dir)
-{
-    double uf = face_val(d, row, d->u[dir], flowbc::umembers[dir], side);
-    double vof = face_val(d, row, d->vof, &flowbc::vof, side);
-
-    return d->rho_bar(vof) * uf;
-}
+// double rho_u_face_val(domain *d, mesh::row *row, double *phi, bcside side, size_t dir)
+// {
+//     double uf = face_val(d, row, d->u[dir], flowbc::umembers[dir], side);
+//     double vof = face_val(d, row, d->vof, &flowbc::vof, side);
+//
+//     return d->rho_bar(vof) * uf;
+// }
 
 flowbc::member flowbc::umembers[3] {&flowbc::u0, &flowbc::u1, &flowbc::u2};
 flowbc::bc_val_getter flowbc::bc_p_getter = std::bind(face_val, _1, _2, _3, &flowbc::p, _4);
@@ -156,11 +156,11 @@ flowbc::bc_val_getter flowbc::bc_u_getter[3] =
     std::bind(face_val, _1, _2, _3, &flowbc::u1, _4),
     std::bind(face_val, _1, _2, _3, &flowbc::u2, _4)
 };
-flowbc::bc_val_getter flowbc::bc_rhou_getter[3] =
-{
-    std::bind(rho_u_face_val, _1, _2, _3, _4, 0),
-    std::bind(rho_u_face_val, _1, _2, _3, _4, 1),
-    std::bind(rho_u_face_val, _1, _2, _3, _4, 2)
-};
+// flowbc::bc_val_getter flowbc::bc_rhou_getter[3] =
+// {
+//     std::bind(rho_u_face_val, _1, _2, _3, _4, 0),
+//     std::bind(rho_u_face_val, _1, _2, _3, _4, 1),
+//     std::bind(rho_u_face_val, _1, _2, _3, _4, 2)
+// };
 
 }

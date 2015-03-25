@@ -11,12 +11,11 @@
 #include "common.h"
 #include <vector>
 #include <algorithm>
+#define SELDON_DEBUG_LEVEL_0
 #include <seldon-5.2/Seldon.hxx>
 #include <seldon-5.2/SeldonSolver.hxx>
 
 #include "domain.h"
-
-#define SELDON_DEBUG_LEVEL_0
 
 namespace aban2
 {

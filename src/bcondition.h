@@ -56,7 +56,7 @@ public:
     static void create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d);
 
     static member umembers[3];
-    static bc_val_getter bc_p_getter, bc_vof_getter, bc_u_getter[3], bc_rhou_getter[3];
+    static bc_val_getter bc_p_getter, bc_vof_getter, bc_u_getter[3]; //, bc_rhou_getter[3];
 };
 
 }

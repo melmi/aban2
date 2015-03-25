@@ -56,10 +56,10 @@ void vof::set_fullnesses()
             }
 }
 
-bool vof::is_empty(size_t i, size_t j, size_t k)
+bool vof::is_empty(size_t i, size_t j, size_t k, int di, int dj, int dk)
 {
     size_t no;
-    if (d->exists_and_inside(i, j, k, no))
+    if (d->exists_and_inside(i, j, k, di, dj, dk, no))
         return fullnesses[no] == fullness::empty;
     return false;
 }
@@ -71,12 +71,12 @@ bool vof::is_on_interface(size_t i, size_t j, size_t k, size_t no)
 
     // if full
     return
-        is_empty(i + 1, j, k) ||
-        is_empty(i - 1, j, k) ||
-        is_empty(i, j + 1, k) ||
-        is_empty(i, j - 1, k) ||
-        is_empty(i, j, k + 1) ||
-        is_empty(i, j, k - 1);
+        is_empty(i, j, k, +1, 0, 0) ||
+        is_empty(i, j, k, -1, 0, 0) ||
+        is_empty(i, j, k, 0, +1, 0) ||
+        is_empty(i, j, k, 0, -1, 0) ||
+        is_empty(i, j, k, 0, 0, +1) ||
+        is_empty(i, j, k, 0, 0, -1);
 }
 
 void vof::detect_interfacial_cells()
@@ -255,7 +255,7 @@ void vof::advect_row(mesh::row *row, double ***grad_ustar)
 void vof::correct_vofs(size_t dir)
 {
     auto grad_uf = gradient::of_uf_dir(d, dir);
-    
+
     // applying correction terms
     for (size_t i = 0; i < d->n; ++i)
         if (original_vof[i] > 0.5)
@@ -345,7 +345,7 @@ void vof::advect()
         set_fullnesses();
         detect_interfacial_cells();
         calculate_normals();
-        
+
         // reconstruct
         calculate_vof_masses_from_vars();
         create_reconsts();

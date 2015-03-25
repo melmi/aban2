@@ -43,7 +43,7 @@ public:
     size_t cellno(row *row, size_t i);
     bool exists(size_t i, size_t j, size_t k);
     bool exists(size_t i, size_t j, size_t k, size_t &no);
-    bool exists_and_inside(size_t i, size_t j, size_t k, size_t &no);
+    bool exists_and_inside(size_t i, size_t j, size_t k, int di, int dj, int dk, size_t &no);
 
 private:
     inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk);
