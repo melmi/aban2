@@ -17,6 +17,7 @@ vof::vof(aban2::domain *_d): d(_d), _fsnorm(_d)
     rhou1[0] = new double[d->n];
     rhou1[1] = new double[d->n];
     rhou1[2] = new double[d->n];
+    original_vof = new double[d->n];
     fullnesses = new fullness[d->n];
     on_interface = new bool[d->n];
     reconsts = new volreconst *[d->n];
@@ -32,6 +33,7 @@ vof::~vof()
     delete[] rhou1[0];
     delete[] rhou1[1];
     delete[] rhou1[2];
+    delete[] original_vof;
     delete[] fullnesses;
     delete[] on_interface;
     delete_reconsts();
@@ -335,9 +337,7 @@ void vof::calculate_vars_from_masses()
 
 void vof::advect()
 {
-    original_vof = new double[d->n];
     std::copy_n(d->vof, d->n, original_vof);
-
     start_dir = (start_dir + 1) % NDIRS;
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
@@ -366,8 +366,6 @@ void vof::advect()
         delete_reconsts();
         domain::delete_var(3, grad_ustar);
     }
-
-    delete[] original_vof;
 }
 
 int vof_err::is_inside(vector n, double alpha, vector x)

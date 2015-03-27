@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
 
     std::cout << "before run" << std::endl << std::flush;
     solver *s = new solver(d, "out/dmbrk");
-    s->run(2);
+    s->run(200);
 
     delete s;
     delete d;

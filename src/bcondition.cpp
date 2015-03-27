@@ -67,7 +67,7 @@ public:
         return
         {
             1,
-            0,//- (u_bc - vector::from_data(d->ustar, cellno)).cmpnt[dir] *d->rho[cellno] / d->dt,
+            - (u_bc - vector::from_data(d->ustar, cellno)).cmpnt[dir] *d->rho[cellno] / d->dt,
             0
         };
     }

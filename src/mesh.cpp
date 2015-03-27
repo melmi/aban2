@@ -57,7 +57,7 @@ bool inside_bounds(size_t x, int dx, size_t max)
 {
     long xx = x;
     xx += dx;
-    return xx >= 0 && xx <= (long)max;
+    return xx >= 0 && xx < (long)max;
 }
 
 bool mesh::exists_and_inside(size_t i, size_t j, size_t k, int di, int dj, int dk, size_t &no)
