@@ -22,12 +22,16 @@ volreconst *volreconst::from_base_data(vector _c, vector _m)
 
     double base_vol = 1;
     size_t ndirs = 0;
-    if (has_elem[0]) base_vol /= m.x * ++ndirs;
-    else base_vol *= _c.x;
-    if (has_elem[1]) base_vol /= m.y * ++ndirs;
-    else base_vol *= _c.y;
-    if (has_elem[2]) base_vol /= m.z * ++ndirs;
-    else base_vol *= _c.z;
+    for (int i = 0; i < 3; ++i)
+        if (has_elem[i])
+            base_vol /= m.cmpnt[i] * ++ndirs;
+        else
+        {
+            base_vol *= _c.cmpnt[i];
+            m.cmpnt[i] = _m.cmpnt[i] = 0;
+        }
+    m.normalize();
+    _m.normalize();
 
     volreconst *result;
     switch (ndirs)
@@ -79,7 +83,6 @@ volreconst *volreconst::get_cut(size_t dir, double delta)
 {
     bool from_start = (delta * orig_m.cmpnt[dir]) < 0.0;
     delta = std::abs(delta);
-
     vector new_c = c;
     new_c.cmpnt[dir] = delta;
 

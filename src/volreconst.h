@@ -24,7 +24,7 @@ namespace aban2
 
 class volreconst
 {
-    constexpr static const double epsilon = 1e-7;
+    constexpr static const double epsilon = 1e-15;
 
     static volreconst *from_base_data(vector _c, vector _m);
     void set_volume(); //sets volume assuming c, m and alpha  are known
