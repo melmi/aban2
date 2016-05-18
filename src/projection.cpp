@@ -5,6 +5,7 @@
  * Created on 24 Oct 2013
  */
 
+#include <iostream>
 #include "projection.h"
 #include "gradient.h"
 
@@ -20,10 +21,9 @@ projection::~projection()
 {
 }
 
-projection::matrix_t *projection::create_matrix()
+lpw::matrix_t *projection::create_matrix()
 {
-    matrix_t *pmatrix = new matrix_t();
-    pmatrix->Reallocate(d->n, d->n);
+    lpw::matrix_t *pmatrix = new lpw::matrix_t(d->n);
 
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
@@ -35,7 +35,7 @@ projection::matrix_t *projection::create_matrix()
     return pmatrix;
 }
 
-void projection::add_row(matrix_t *pmatrix, mesh::row *row)
+void projection::add_row(lpw::matrix_t *pmatrix, mesh::row *row)
 {
     size_t n = row->n;
     size_t *row_cellnos = d->get_row_cellnos(row);
@@ -46,9 +46,9 @@ void projection::add_row(matrix_t *pmatrix, mesh::row *row)
         double rho_w = d->rho[no_w], rho_p = d->rho[no_p], rho_e = d->rho[no_e];
         double _rho_f_w = 2.0 / (rho_w + rho_p), _rho_f_e = 2.0 / (rho_e + rho_p);
 
-        pmatrix->AddInteraction(no_p, no_w, +h2inv * _rho_f_w);
-        pmatrix->AddInteraction(no_p, no_p, -h2inv * (_rho_f_e + _rho_f_w));
-        pmatrix->AddInteraction(no_p, no_e, +h2inv * _rho_f_e);
+        (*pmatrix)(no_p, no_w) += +h2inv * _rho_f_w;
+        (*pmatrix)(no_p, no_p) += -h2inv * (_rho_f_e + _rho_f_w);
+        (*pmatrix)(no_p, no_e) += +h2inv * _rho_f_e;
     }
 
     auto desc_start = d->boundaries[(int)row->start_code]->p->desc(d->cellno(row, 0         ), row->dir);
@@ -61,7 +61,7 @@ void projection::add_row(matrix_t *pmatrix, mesh::row *row)
     delete[] row_cellnos;
 }
 
-void projection::apply_row_bc(matrix_t *pmatrix, size_t no0 , size_t no1, bcdesc desc, double rho_b)
+void projection::apply_row_bc(lpw::matrix_t *pmatrix, size_t no0 , size_t no1, bcdesc desc, double rho_b)
 {
     double rho_0 = d->rho[no0],
            rho_1 = d->rho[no1],
@@ -71,8 +71,8 @@ void projection::apply_row_bc(matrix_t *pmatrix, size_t no0 , size_t no1, bcdesc
     double c0 = 2.0 * desc.sw - 2.0;
     double c1 = -1.0;
 
-    pmatrix->AddInteraction(no0, no0, (c0 * _rho_b + c1 * _rho_f)*h2inv);
-    pmatrix->AddInteraction(no0, no1, _rho_f * h2inv);
+    (*pmatrix)(no0, no0) += (c0 * _rho_b + c1 * _rho_f) * h2inv;
+    (*pmatrix)(no0, no1) += _rho_f * h2inv;
 }
 
 double *projection::get_rhs()
@@ -111,31 +111,8 @@ void projection::solve_p()
 {
     auto pmatrix = create_matrix();
     auto rhs = get_rhs();
-    Seldon::Vector<double> b(d->n), x(d->n);
-    x.SetData(d->n, d->p);
-    b.SetData(d->n, rhs);
-
-    Seldon::Preconditioner_Base precond;
-    Seldon::Iteration<double> iter(10000, 1e-9);
-    iter.HideMessages();
-    iter.SetInitGuess(false);
-
-    int error = Seldon::BiCgStab(*pmatrix, x, b, precond, iter);
-
-    std::cout << "                   #iterations: " << iter.GetNumberIteration() << std::endl;
-    //std::cout << "                   successful:  " << (error == 0) << std::endl;
-
-    if (error != 0)
-    {
-        std::cout << std::endl
-                  << " pressure solution diverged. " << std::endl
-                  << " program halted!" << std::endl;
-        throw false;
-    }
-
-    x.Nullify();
-    b.Nullify();
-
+    auto niter = cg(pmatrix, d->p, rhs, d->n, lpw::precond_t::jacobi, 1.2);
+    std::cout << "                   #iterations: " << niter << std::endl;
     delete[] rhs;
     delete pmatrix;
 }

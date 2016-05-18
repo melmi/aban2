@@ -5,9 +5,9 @@ BINDIR = bin
 OUTDIR = out
 
 CXX      = g++
-CXXFLAGS = -O3 -std=c++11 -Wall
+CXXFLAGS = -O3 -std=c++14 -Wall
 # CXXFLAGS = -g -O0 -std=c++11 -Wall -Wextra
-LDFLAGS  = -ljsoncpp -Xlinker -zmuldefs
+LDFLAGS  = -llaspack -ljsoncpp -Xlinker -zmuldefs
 
 TARGET = $(BINDIR)/aban2
 SRCS   = $(wildcard $(SRCDIR)/*.cpp)
