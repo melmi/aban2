@@ -50,12 +50,12 @@ void matrix_t::construct_qmatrix (QMatrix* q, std::string s)
     while (iter != elements.end())
     {
         int r = iter->first / n;
-        int max_idx = idx(0,r + 1);
+        int max_idx = idx(0, r + 1);
         int nr = count_while(iter, elements.end(), [max_idx](auto i)
         {
             return i.first < max_idx;
         });
-        Q_SetLen(q, r+1, nr);
+        Q_SetLen(q, r + 1, nr);
         for (int i = 0; i < nr; ++i)
         {
             Q_SetEntry(q, r + 1, i, iter->first % n + 1, iter->second);
@@ -78,9 +78,9 @@ void construct_vector(Vector* v, double*arr, int n, std::string s)
 
 void vector2arr(Vector* v, double* arr)
 {
-    int n=V_GetDim(v);
-    for(int i=0;i<n;++i)
-        arr[i]=V_GetCmp(v,i+1);
+    int n = V_GetDim(v);
+    for (int i = 0; i < n; ++i)
+        arr[i] = V_GetCmp(v, i + 1);
 }
 
 PrecondProcType get_precond_proc(precond_t p)
@@ -98,7 +98,9 @@ PrecondProcType get_precond_proc(precond_t p)
     }
 }
 
-int cg(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
+typedef Vector *(*solver_proc)(QMatrix *, Vector *, Vector *, int, PrecondProcType, double);
+
+int general_solve(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega, solver_proc proc)
 {
     QMatrix A;
     Vector xx, bb;
@@ -106,14 +108,24 @@ int cg(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
     a->construct_qmatrix(&A, "A");
     construct_vector(&xx, x, a->get_n(), "x");
     construct_vector(&bb, b, a->get_n(), "b");
-    auto precond=get_precond_proc(p);
-    CGIter(&A, &xx, &bb, max_iter, precond, omega);
+    auto precond = get_precond_proc(p);
+    (*proc)(&A, &xx, &bb, max_iter, precond, omega);
     vector2arr(&xx, x);
     Q_Destr(&A);
     V_Destr(&xx);
     V_Destr(&bb);
 
     return GetLastNoIter();
+}
+
+int cg(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
+{
+    return general_solve(a, x, b, max_iter, p, omega, CGIter);
+}
+
+int sor_forward(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
+{
+    return general_solve(a, x, b, max_iter, p, omega, SORForwIter);
 }
 
 }
