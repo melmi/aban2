@@ -9,6 +9,7 @@
 #include "gradient.h"
 
 #include <iostream>
+#include <cmath>
 #include <iomanip>
 
 namespace aban2
