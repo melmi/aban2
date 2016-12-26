@@ -11,6 +11,7 @@
 #include "common.h"
 #include "debug.h"
 #include <iostream>
+#include <numeric>
 #include <cmath>
 #include <functional>
 
@@ -196,25 +197,114 @@ void vof_reconst_accuracy_test()
     cout << "done" << endl;
 }
 
-void zalesak_disk(domain *);
+void zalesak_disk(domain *d, vector center = {0.5, 0.75, 0});
 void fill_func(domain *d, double *phi, std::function<double(vector)> f);
+
+double error_in_rectangel(domain*d, vector c, vector l, double*phi1, double*phi2)
+{
+    double h_2 = d->delta / 2.0;
+    size_t no;
+    double result = 0;
+
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->exists(i, j, 0, no))
+            {
+                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
+                if (
+                    (x.x > c.x - l.x / 2.0) &&
+                    (x.x < c.x + l.x / 2.0) &&
+                    (x.y > c.y - l.y / 2.0) &&
+                    (x.y < c.y + l.y / 2.0))
+                {
+                    double e=std::abs(phi1[no] - phi2[no]);
+                    result += e;
+                }
+            }
+    return result;
+}
+
+void consistent_vof_test()
+{
+    string files[]
+    {
+        // "mesh/cavity10x10.json",
+        "mesh/cavity20x20.json",
+        "mesh/cavity40x40.json",
+        "mesh/cavity80x80.json",
+        "mesh/cavity160x160.json"
+    };
+    for (auto f : files)
+    {
+        cout << "========" << endl;
+        cout << "input file: " << f << endl;
+        domain *d = domain::create_from_file(f);
+        vof *_vof = new vof(d);
+
+        double dt = 1, dx = d->delta, CFL = 0.5;
+        d->dt = dt;
+        double u = CFL * dx / dt;
+        double omega = u / 0.5;//0.25;
+        int nSteps = 2 * 3.1415 / (omega * dt);
+
+        vortex(d, {0.5, 0.5, 0}, omega);
+        vector x0 {0.5, 0.7, 0};
+        zalesak_disk(d, x0);
+        // circle(d, {0.5, 0.5, 0}, 0.15);
+        double sigma = 0.15;
+        double two_sigma2 = 2 * sigma * sigma;
+        fill_func(d, d->u[0], [x0, two_sigma2](vector x)
+        {
+            return std::exp(-((x - x0) * (x - x0)) / two_sigma2);
+        });
+        fill_n(d->u[1], d->n, 0);
+        for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+
+        double *dd = new double[d->n];
+        double *vv = new double[d->n];
+        copy_n(d->u[0], d->n, dd);
+        copy_n(d->vof, d->n, vv);
+
+        _vof->calculate_normals();
+        d->write_vtk("out/zalesak0.vtk");
+        for (int i = 0; i < nSteps; ++i)
+        {
+            // std::cout << "step " << i + 1 << std::endl << std::flush;
+            std::copy_n(d->u[0], d->n, d->ustar[0]);
+            _vof->advect();
+
+            _vof->calculate_normals();
+            std::copy_n(d->ustar[0], d->n, d->u[0]);
+            // d->write_vtk("out/zalesak" + to_string(i + 1) + ".vtk");
+        }
+        d->write_vtk("out/zalesak1.vtk");
+
+        std::cout << "err dd: " << error_in_rectangel(d, x0, {0.4, 0.4, 0}, dd, d->u[0]) << std::endl;
+        std::cout << "err vv: " << error_in_rectangel(d, x0, {0.4, 0.4, 0}, vv, d->vof) << std::endl;
+
+        delete _vof;
+        delete d;
+        delete dd;
+    }
+}
 
 void zalesak_disk_rotation_test()
 {
-    domain *d = domain::create_from_file("mesh/cavity100x100.json");
-    for (size_t i = 0; i < d->n; ++i) d->p[i] = i;
+    domain *d = domain::create_from_file("mesh/cavity160x160.json");
+    // for (size_t i = 0; i < d->n; ++i) d->p[i] = i;
 
     vof *_vof = new vof(d);
-    fill_func(d, d->uf[1], [](vector x) {return -0.004;});
-    //vortex(d, {0.5, 0.5, 0}, 0.01);
+    // fill_func(d, d->uf[1], [](vector x) {return -0.004;});
+    vortex(d, {0.5, 0.5, 0}, 0.01);
     // fill_func(d, d->ustar[0], [](vector x) {return x* vector{1, 1, 0};});
-    fill_func(d, d->ustar[0], [](vector x)
+    // square(d, {0.5, 0.75, 0}, 0.15);
+    zalesak_disk(d);
+    fill_func(d, d->u[0], [](vector x)
     {
         vector x0 {0.5, 0.75, 0};
-        return std::exp(-((x - x0) * (x - x0)) / 0.06);
+        double sigma2 = 0.2 * 0.2;
+        return std::exp(-((x - x0) * (x - x0)) / sigma2);
     });
-    square(d, {0.5, 0.75, 0}, 0.15);
-    // zalesak_disk(d);
     for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
 
     _vof->calculate_normals();
@@ -222,9 +312,11 @@ void zalesak_disk_rotation_test()
     for (int i = 0; i < 700; ++i)
     {
         std::cout << "step " << i + 1 << std::endl << std::flush;
+        std::copy_n(d->u[0], d->n, d->ustar[0]);
         _vof->advect();
 
         _vof->calculate_normals();
+        std::copy_n(d->ustar[0], d->n, d->u[0]);
         d->write_vtk("out/zalesak" + to_string(i + 1) + ".vtk");
     }
 
@@ -311,10 +403,10 @@ void square(domain *d, vector c, double a)
     rectangel(d, c, {a, a, a}, 1);
 }
 
-void zalesak_disk(domain *d)
+void zalesak_disk(domain *d, vector center)
 {
-    circle(d, {0.5, 0.75, 0}, 0.15);
-    rectangel(d, {0.5, 0.725, 0}, {0.05 , 0.25 , 0}, 0);
+    circle(d, center, 0.15);
+    rectangel(d, center - vector{0, 0.1, 0}, {0.05 , 0.3, 0}, 0);
 }
 
 //-------------------------- velocity fields
@@ -334,8 +426,14 @@ void fill_func(domain *d, double *phi, std::function<double(vector)> f)
 
 void vortex(domain *d, vector x0, double omega)
 {
-    fill_func(d, d->uf[0], [x0, omega](vector x) {return omega * (x0.y - x.y);});
-    fill_func(d, d->uf[1], [x0, omega](vector x) {return omega * (x.x - x0.x);});
+    fill_func(d, d->uf[0], [x0, omega](vector x)
+    {
+        return omega * (x0.y - x.y);
+    });
+    fill_func(d, d->uf[1], [x0, omega](vector x)
+    {
+        return omega * (x.x - x0.x);
+    });
 }
 
 }
