@@ -25,7 +25,7 @@ class fsnorm
     };
     static const double epsilon;
 
-    domain *d;
+    domain_t *d;
 
     neighbs_t get_nighb_vals(size_t i, size_t j, size_t k);
     inline void relax_center_val(int i, int j, int k, neighbs_t &n);
@@ -39,7 +39,7 @@ class fsnorm
     void create_column_candidates(const neighbs_t &n, vector *candidates, bool *ok);
     bool create_young_candidate(const neighbs_t &n, vector &v);
 public:
-    fsnorm(domain *_d);
+    fsnorm(domain_t *_d);
     ~fsnorm();
     vector get_normal(size_t i, size_t j, size_t k, size_t no);
 };

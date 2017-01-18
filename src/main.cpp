@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <jsoncpp/json/json.h>
-#include "mesh.h"
 #include "domain.h"
 #include "advection.h"
 #include "diffusion.h"

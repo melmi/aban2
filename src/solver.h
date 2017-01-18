@@ -23,16 +23,16 @@ namespace aban2
 class solver
 {
 private:
-    domain *d;
+    domain_t *domain;
     projection *projector;
-    vof *_vof;
+    vof_t *vof;
     diffusion *diffusor;
     std::string out_path;
 
     void apply_source_terms();
     double divergance();
 public:
-    solver(domain *_d, std::string _out_path);
+    solver(domain_t *_d, std::string _out_path);
     ~solver();
 
     void write_step(size_t step);

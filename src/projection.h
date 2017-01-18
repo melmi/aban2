@@ -21,15 +21,15 @@ namespace aban2
 class projection
 {
 public:
-    projection(domain *_d);
+    projection(domain_t *_d);
     ~projection();
 
 private:
-    domain *d;
+    domain_t *d;
     double h2inv;
 
     lpw::matrix_t *create_matrix();
-    void add_row(lpw::matrix_t *pmatrix, mesh::row *row);
+    void add_row(lpw::matrix_t *pmatrix, row_t *row);
     void apply_row_bc(lpw::matrix_t *pmatrix, size_t no0, size_t no1, bcdesc desc, double rho_b);
 
     double *get_rhs();

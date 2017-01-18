@@ -39,7 +39,7 @@ public:
     {
         return {0, 0, value};
     }
-    dirichlet(domain *_d, double _value): bcondition(_d), value(_value) {}
+    dirichlet(domain_t *_d, double _value): bcondition(_d), value(_value) {}
 };
 
 //////////////////////////  neumann
@@ -52,7 +52,7 @@ public:
     {
         return {1, value, 0};
     }
-    neumann(domain *_d, double _value): bcondition(_d), value(_value) {}
+    neumann(domain_t *_d, double _value): bcondition(_d), value(_value) {}
 };
 
 //////////////////////////  pressure_of_const_velocity
@@ -71,12 +71,12 @@ public:
             0
         };
     }
-    pressure_of_const_velocity(domain *_d, vector _u_bc): bcondition(_d), u_bc(_u_bc) {}
+    pressure_of_const_velocity(domain_t *_d, vector _u_bc): bcondition(_d), u_bc(_u_bc) {}
 };
 
 //////////////////////////  flow_bcondition
 
-void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
+void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain_t *_d)
 {
     auto bnames = bcroot->getMemberNames();
     for (auto &bname : bnames)
@@ -110,7 +110,7 @@ void flowbc::create_bcs(Json::Value *bcroot, flowbc **boundaries, domain *_d)
             };
         }
 
-        boundaries[(int)bname[0]] = bc;
+        boundaries[std::stoi(bname)] = bc;
     }
 }
 
@@ -123,7 +123,7 @@ flowbc::~flowbc()
     delete vof;
 }
 
-double face_val(domain *d, mesh::row *row, double *phi, flowbc::member mem, bcside side)
+double face_val(domain_t *d, row_t *row, double *phi, flowbc::member mem, bcside side)
 {
     if (side == bcside::start)
     {

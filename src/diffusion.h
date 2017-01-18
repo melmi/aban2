@@ -13,20 +13,20 @@
 
 #include "domain.h"
 #include "bcondition.h"
- 
+
 namespace aban2
 {
 
 class diffusion
 {
 private:
-    domain* d;
+    domain_t* d;
 
     static void solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c);
 
 public:
-    diffusion(domain *_d): d(_d) {}
-    void diffuse(mesh::row *row, double *phi, double* D, flowbc::member mem);
+    diffusion(domain_t *_d): d(_d) {}
+    void diffuse(row_t *row, double *phi, double* D, flowbc::member mem);
     void diffuse_ustar();
 };
 

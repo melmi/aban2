@@ -12,15 +12,21 @@
 #include <jsoncpp/json/json.h>
 #include <list>
 #include <fstream>
-//#include <eigen3/Eigen/SparseCore>
 
-#include "mesh.h"
 #include "bcondition.h"
 
 namespace aban2
 {
 
-class domain: public mesh
+    struct row_t
+    {
+        size_t dir;
+        size_t n;
+        size_t start[3], end[3];
+        char start_code, end_code;
+    };
+
+class domain_t
 {
     struct varinfo
     {
@@ -37,6 +43,21 @@ class domain: public mesh
         varinfo(std::string _name, char _rank, bool _show, void *_data);
     };
 public:
+    //came from old mesh
+    size_t n, ndir[3];
+    double delta;
+    double vcell, aface;
+    size_t nrows[3];
+    size_t *cellnos;
+    row_t *rows[3];
+
+    size_t idx(size_t i, size_t j, size_t k);
+    size_t cellno(row_t *row, size_t i);
+    bool is_inside(size_t i, size_t j, size_t k);
+    bool is_inside(size_t i, size_t j, size_t k, size_t &no);
+    bool is_inside(size_t i, size_t j, size_t k, int di, int dj, int dk, size_t &no);
+    //
+
     double **uf, * *u, * *ustar, *p;
     double rho0, rho1, nu0, nu1;
     double *rho, *nu;
@@ -48,16 +69,16 @@ public:
     flowbc **boundaries;
     std::list<varinfo> varlist;
 
-    static domain *create_from_file(std::string file_name);
-    domain(Json::Value *root);
-    ~domain();
-    virtual void register_vars();
+    static domain_t *create_from_file(std::string file_name);
+    domain_t(Json::Value *root);
+    ~domain_t();
+    void register_vars();
     void write_vtk(std::string file_name);
-    double *extract_scalars(row *row, double *var);
-    void insert_scalars(row *row, double *var, double *row_vals);
-    vector *extract_vectors(row *row, double **var);
-    void insert_vectors(row *row, double **var, vector *row_vals);
-    size_t *get_row_cellnos(row *row);
+    double *extract_scalars(row_t *row, double *var);
+    void insert_scalars(row_t *row, double *var, double *row_vals);
+    vector *extract_vectors(row_t *row, double **var);
+    void insert_vectors(row_t *row, double **var, vector *row_vals);
+    size_t *get_row_cellnos(row_t *row);
     void *create_var(size_t rank);
     static void delete_var(size_t rank, void *v);
 
@@ -65,6 +86,10 @@ public:
     double nu_bar(double _vof);
 
 private:
+    inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk);
+    void generate_rows(size_t dir);
+    void set_cell_nos();
+
     void create_vars();
     void delete_vars();
 };

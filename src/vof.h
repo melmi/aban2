@@ -18,14 +18,14 @@
 namespace aban2
 {
 
-class vof
+class vof_t
 {
     enum class fullness
     {
         full, empty, half
     };
 
-    domain *d;
+    domain_t *d;
     fsnorm _fsnorm;
     size_t start_dir = 0;
     double *mass;
@@ -42,29 +42,29 @@ class vof
     // void calculate_normals();
     void create_reconsts();
     void delete_reconsts();
-    inline std::tuple<double, vector, vector> get_flux(mesh::row *row, size_t i, double udt, double ***grad_ustar);
-    inline std::tuple<double, vector, vector> get_bc_flux(mesh::row *row, double ***grad_ustar, bcside side);
-    void advect_row(mesh::row *row, double ***grad_ustar);
+    inline std::tuple<double, vector, vector> get_flux(row_t *row, size_t i, double udt, double ***grad_ustar);
+    inline std::tuple<double, vector, vector> get_bc_flux(row_t *row, double ***grad_ustar, bcside side);
+    void advect_row(row_t *row, double ***grad_ustar);
     void correct_vofs(size_t dir);
     void calculate_vof_masses_from_vars();
     void calculate_ustar_masses_from_vars(double ***grad_ustar);
     void calculate_vars_from_masses();
 public:
     void calculate_normals();
-    vof(domain *_d);
-    ~vof();
+    vof_t(domain_t *domain);
+    ~vof_t();
 
     void advect();
 
-    friend class vof_err;
+    friend class vof_err_t;
 };
 
-class vof_err
+class vof_err_t
 {
     inline static int is_inside(vector n, double alpha, vector x);
     inline static double err(vector n1, double alpha1, vector n2, double alpha2, double h);
 public:
-    static double compare(vof &v);
+    static double compare(vof_t &v);
 };
 }
 

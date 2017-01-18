@@ -12,7 +12,7 @@
 namespace aban2
 {
 
-projection::projection(domain *_d): d(_d)
+projection::projection(domain_t *_d): d(_d)
 {
     h2inv = 1.0 / (d->delta * d->delta);
 }
@@ -28,14 +28,14 @@ lpw::matrix_t *projection::create_matrix()
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
-            mesh::row *row = d->rows[idir] + irow;
+            row_t *row = d->rows[idir] + irow;
             add_row(pmatrix, row);
         }
 
     return pmatrix;
 }
 
-void projection::add_row(lpw::matrix_t *pmatrix, mesh::row *row)
+void projection::add_row(lpw::matrix_t *pmatrix, row_t *row)
 {
     size_t n = row->n;
     size_t *row_cellnos = d->get_row_cellnos(row);
@@ -88,7 +88,7 @@ void projection::apply_rhs_bc(double *rhs)
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
         {
-            mesh::row *row = d->rows[dir] + irow;
+            row_t *row = d->rows[dir] + irow;
 
             size_t cellno_start = d->cellno(row, 0);
             size_t cellno_end   = d->cellno(row, row->n - 1);
@@ -122,7 +122,7 @@ double p_f(double p_P, double rho_P, double p_N, double rho_N)
     return (p_P * rho_N + p_N * rho_P) / (rho_P + rho_N);
 }
 
-double **gradient_of_p(domain *d)
+double **gradient_of_p(domain_t *d)
 {
     double **result = new double*[3];
     result[2] = nullptr;
@@ -172,7 +172,7 @@ void projection::update_uf()
     for (size_t idir = 0; idir < NDIRS; ++idir)
         for (size_t irow = 0; irow < d->nrows[idir]; ++irow)
         {
-            mesh::row *row = d->rows[idir] + irow;
+            row_t *row = d->rows[idir] + irow;
 
             double *ustar = d->extract_scalars(row, d->ustar[idir]);
             double *p = d->extract_scalars(row, d->p);

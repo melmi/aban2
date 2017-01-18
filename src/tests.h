@@ -10,14 +10,14 @@
 
 #include "common.h"
 #include "debug.h"
-#include <iostream>
-#include <numeric>
 #include <cmath>
 #include <functional>
+#include <iostream>
+#include <numeric>
 
 #include "domain.h"
-#include "volreconst.h"
 #include "vof.h"
+#include "volreconst.h"
 
 using namespace std;
 
@@ -26,7 +26,7 @@ namespace aban2
 
 //-------------------------- utility functions
 
-void check_continuety(domain *d)
+void check_continuety(domain_t *d)
 {
     double *div = new double[d->n];
     std::fill_n(div, d->n, 0);
@@ -34,7 +34,7 @@ void check_continuety(domain *d)
     for (size_t dir = 0; dir < NDIRS; ++dir)
         for (size_t irow = 1; irow < d->nrows[dir] - 1; ++irow)
         {
-            mesh::row *row = d->rows[dir] + irow;
+            row_t *row = d->rows[dir] + irow;
             for (size_t i = 1; i < row->n - 1; ++i)
             {
                 double *u = d->extract_scalars(row, d->uf[row->dir]);
@@ -46,14 +46,13 @@ void check_continuety(domain *d)
             }
         }
 
-    std::for_each(div, div + d->n, [](double & x)
-    {
+    std::for_each(div, div + d->n, [](double &x) {
         x = std::abs(x);
     });
     cout << "divergance: " << std::accumulate(div, div + d->n, 0) << std::endl;
 }
 
-string rowtostr(mesh::row *r)
+string rowtostr(row_t *r)
 {
     std::stringstream s;
     s << "n: (" << r->n << ")  ";
@@ -64,7 +63,7 @@ string rowtostr(mesh::row *r)
     return s.str();
 }
 
-void print_cell_nos(domain *d)
+void print_cell_nos(domain_t *d)
 {
     for (size_t i = d->ndir[0] - 1; i > 0; --i)
     {
@@ -72,8 +71,8 @@ void print_cell_nos(domain *d)
         {
             size_t x = d->idx(i, j, 0);
             cout.width(4);
-            if (d->codes[x] == mesh::INSIDE)
-                cout << d->cellnos[x];
+            // if (d->codes[x] == mesh::INSIDE)
+            cout << d->cellnos[x];
             // else
             //     cout << d->codes[x];
         }
@@ -82,14 +81,14 @@ void print_cell_nos(domain *d)
     }
 }
 
-void print_rows(domain *d)
+void print_rows(domain_t *d)
 {
     for (size_t dir = 0; dir < NDIRS; ++dir)
     {
         cout << "======= dir: " << dir << endl;
         for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
         {
-            mesh::row *row = d->rows[dir] + irow;
+            row_t *row = d->rows[dir] + irow;
             cout << rowtostr(row) << endl;
 
             // auto a = d->get_row_idxs(row);
@@ -104,12 +103,13 @@ void print_rows(domain *d)
 }
 
 template <class I>
-std::size_t min_element_index ( I first, I last )
+std::size_t min_element_index(I first, I last)
 {
     I lowest = first;
     std::size_t index = 0;
     std::size_t i = 0;
-    if (first == last) return index;
+    if (first == last)
+        return index;
     while (++first != last)
     {
         ++i;
@@ -124,13 +124,13 @@ std::size_t min_element_index ( I first, I last )
 
 //-------------------------- tests
 
-void adv_test1(domain *d)
+void adv_test1(domain_t *d)
 {
     double x0 = 51, y0 = 51;
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             for (size_t k = 0; k < d->ndir[2]; ++k)
-                if (d->exists(i, j, k))
+                if (d->is_inside(i, j, k))
                 {
                     size_t ix = d->cellnos[d->idx(i, j, k)];
                     // cout<<ix<<endl<<flush;
@@ -138,58 +138,57 @@ void adv_test1(domain *d)
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
                     /* double z = k * d->delta + d->delta / 2.0; */
-                    double phi = exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
+                    double phi = exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
                     d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
                 }
 }
 
-void diff_test1(domain *d)
+void diff_test1(domain_t *d)
 {
     double x0 = 21, y0 = 21;
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             for (size_t k = 0; k < d->ndir[2]; ++k)
-                if (d->exists(i, j, k))
+                if (d->is_inside(i, j, k))
                 {
                     size_t ix = d->cellnos[d->idx(i, j, k)];
                     // cout<<ix<<endl<<flush;
                     double x = i * d->delta + d->delta / 2.0;
                     double y = j * d->delta + d->delta / 2.0;
                     /* double z = k * d->delta + d->delta / 2.0; */
-                    double phi =  exp(-( (x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
+                    double phi = exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / 100.0);
                     d->ustar[0][ix] = d->ustar[1][ix] = d->ustar[2][ix] = phi;
                 }
 }
 
-void square(domain *d, vector c, double a);
-void circle(domain *d, vector x0, double r);
-void vortex(domain *d, vector x0, double omega);
+void square(domain_t *d, vector c, double a);
+void circle(domain_t *d, vector x0, double r);
+void vortex(domain_t *d, vector x0, double omega);
 
 void vof_reconst_accuracy_test()
 {
-    string files[]
-    {
+    string files[]{
         "mesh/cavity10x10.json",
         "mesh/cavity20x20.json",
         "mesh/cavity40x40.json",
         "mesh/cavity80x80.json",
-        "mesh/cavity160x160.json"
-    };
+        "mesh/cavity160x160.json"};
+
     for (auto f : files)
     {
         cout << "========" << endl;
         cout << "input file: " << f << endl;
         cout << "Reading mesh" << endl;
-        domain *d = domain::create_from_file(f);
+        domain_t *d = domain_t::create_from_file(f);
         cout << "initializing" << endl;
         circle(d, {0.5, 0.5, 0}, 0.30);
-        vof *vofc = new vof(d);
+        vof_t *vofc = new vof_t(d);
         cout << "calculating normals" << endl;
         vofc->calculate_normals();
         cout << "writing" << endl;
         d->write_vtk("out/" + f.substr(5) + ".vtk");
         cout << "comparing" << endl;
-        cout << vof_err::compare(*vofc) << endl;
+        cout << vof_err_t::compare(*vofc) << endl;
         delete vofc;
         delete d;
     }
@@ -197,10 +196,10 @@ void vof_reconst_accuracy_test()
     cout << "done" << endl;
 }
 
-void zalesak_disk(domain *d, vector center = {0.5, 0.75, 0});
-void fill_func(domain *d, double *phi, std::function<double(vector)> f);
+void zalesak_disk(domain_t *d, vector center = {0.5, 0.75, 0});
+void fill_func(domain_t *d, double *phi, std::function<double(vector)> f);
 
-double error_in_rectangel(domain*d, vector c, vector l, double*phi1, double*phi2)
+double error_in_rectangel(domain_t *d, vector c, vector l, double *phi1, double *phi2)
 {
     double h_2 = d->delta / 2.0;
     size_t no;
@@ -208,16 +207,16 @@ double error_in_rectangel(domain*d, vector c, vector l, double*phi1, double*phi2
 
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
-            if (d->exists(i, j, 0, no))
+            if (d->is_inside(i, j, 0, no))
             {
-                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
+                vector x{d->delta * i - h_2, d->delta * j - h_2, 0};
                 if (
                     (x.x > c.x - l.x / 2.0) &&
                     (x.x < c.x + l.x / 2.0) &&
                     (x.y > c.y - l.y / 2.0) &&
                     (x.y < c.y + l.y / 2.0))
                 {
-                    double e=std::abs(phi1[no] - phi2[no]);
+                    double e = std::abs(phi1[no] - phi2[no]);
                     result += e;
                 }
             }
@@ -226,54 +225,52 @@ double error_in_rectangel(domain*d, vector c, vector l, double*phi1, double*phi2
 
 void consistent_vof_test()
 {
-    string files[]
-    {
-        // "mesh/cavity10x10.json",
+    string files[]{
         "mesh/cavity20x20.json",
         "mesh/cavity40x40.json",
         "mesh/cavity80x80.json",
-        "mesh/cavity160x160.json"
-    };
+        "mesh/cavity160x160.json"};
+
     for (auto f : files)
     {
         cout << "========" << endl;
         cout << "input file: " << f << endl;
-        domain *d = domain::create_from_file(f);
-        vof *_vof = new vof(d);
+        domain_t *d = domain_t::create_from_file(f);
+        vof_t *vof = new vof_t(d);
 
         double dt = 1, dx = d->delta, CFL = 0.5;
         d->dt = dt;
         double u = CFL * dx / dt;
-        double omega = u / 0.5;//0.25;
+        double omega = u / 0.5; //0.25;
         int nSteps = 2 * 3.1415 / (omega * dt);
 
         vortex(d, {0.5, 0.5, 0}, omega);
-        vector x0 {0.5, 0.7, 0};
+        vector x0{0.5, 0.7, 0};
         zalesak_disk(d, x0);
         // circle(d, {0.5, 0.5, 0}, 0.15);
         double sigma = 0.15;
         double two_sigma2 = 2 * sigma * sigma;
-        fill_func(d, d->u[0], [x0, two_sigma2](vector x)
-        {
+        fill_func(d, d->u[0], [x0, two_sigma2](vector x) {
             return std::exp(-((x - x0) * (x - x0)) / two_sigma2);
         });
         fill_n(d->u[1], d->n, 0);
-        for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+        for (size_t i = 0; i < d->n; ++i)
+            d->rho[i] = d->rho_bar(d->vof[i]);
 
         double *dd = new double[d->n];
         double *vv = new double[d->n];
         copy_n(d->u[0], d->n, dd);
         copy_n(d->vof, d->n, vv);
 
-        _vof->calculate_normals();
+        vof->calculate_normals();
         d->write_vtk("out/zalesak0.vtk");
         for (int i = 0; i < nSteps; ++i)
         {
             // std::cout << "step " << i + 1 << std::endl << std::flush;
             std::copy_n(d->u[0], d->n, d->ustar[0]);
-            _vof->advect();
+            vof->advect();
 
-            _vof->calculate_normals();
+            vof->calculate_normals();
             std::copy_n(d->ustar[0], d->n, d->u[0]);
             // d->write_vtk("out/zalesak" + to_string(i + 1) + ".vtk");
         }
@@ -282,7 +279,7 @@ void consistent_vof_test()
         std::cout << "err dd: " << error_in_rectangel(d, x0, {0.4, 0.4, 0}, dd, d->u[0]) << std::endl;
         std::cout << "err vv: " << error_in_rectangel(d, x0, {0.4, 0.4, 0}, vv, d->vof) << std::endl;
 
-        delete _vof;
+        delete vof;
         delete d;
         delete dd;
     }
@@ -290,28 +287,29 @@ void consistent_vof_test()
 
 void zalesak_disk_rotation_test()
 {
-    domain *d = domain::create_from_file("mesh/cavity160x160.json");
+    domain_t *d = domain_t::create_from_file("mesh/cavity160x160.json");
     // for (size_t i = 0; i < d->n; ++i) d->p[i] = i;
 
-    vof *_vof = new vof(d);
+    vof_t *_vof = new vof_t(d);
     // fill_func(d, d->uf[1], [](vector x) {return -0.004;});
     vortex(d, {0.5, 0.5, 0}, 0.01);
     // fill_func(d, d->ustar[0], [](vector x) {return x* vector{1, 1, 0};});
     // square(d, {0.5, 0.75, 0}, 0.15);
     zalesak_disk(d);
-    fill_func(d, d->u[0], [](vector x)
-    {
-        vector x0 {0.5, 0.75, 0};
+    fill_func(d, d->u[0], [](vector x) {
+        vector x0{0.5, 0.75, 0};
         double sigma2 = 0.2 * 0.2;
         return std::exp(-((x - x0) * (x - x0)) / sigma2);
     });
-    for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+    for (size_t i = 0; i < d->n; ++i)
+        d->rho[i] = d->rho_bar(d->vof[i]);
 
     _vof->calculate_normals();
     d->write_vtk("out/zalesak0.vtk");
     for (int i = 0; i < 700; ++i)
     {
-        std::cout << "step " << i + 1 << std::endl << std::flush;
+        std::cout << "step " << i + 1 << std::endl
+                  << std::flush;
         std::copy_n(d->u[0], d->n, d->ustar[0]);
         _vof->advect();
 
@@ -327,32 +325,32 @@ void zalesak_disk_rotation_test()
 //-------------------------- vof shapes
 
 /*
-      y
-      ^
-      |
-  +---+---+---+---+
-  |   |   |   |   |
-  +---+---+---+---+
-  |   |   |   |   |
-  +---o---+---+---+-> x
-  |   |   |   |   |
-  +---+---+---+---+
+       y
+       ^
+       |
+       +---+---+---+---+
+       |   |   |   |   |
+       +---+---+---+---+
+       |   |   |   |   |
+       +---o---+---+---+-> x
+       |   |   |   |   |
+       +---+---+---+---+
 
 */
 
-void circle(domain *d, vector x0, double r)
+void circle(domain_t *d, vector x0, double r)
 {
     double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
-    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
-    vector h {d->delta, d->delta, d->delta};
+    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, {-h_2, h_2, 0}, {-h_2, -h_2, 0}};
+    vector h{d->delta, d->delta, d->delta};
 
     size_t no;
     // creating circle
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
-            if (d->exists(i, j, 0, no))
+            if (d->is_inside(i, j, 0, no))
             {
-                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
+                vector x{d->delta * i - h_2, d->delta * j - h_2, 0};
                 vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
                 double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
 
@@ -379,16 +377,16 @@ void circle(domain *d, vector x0, double r)
             }
 }
 
-void rectangel(domain *d, vector c, vector l, double value)
+void rectangel(domain_t *d, vector c, vector l, double value)
 {
     double h_2 = d->delta / 2.0;
     size_t no;
 
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
-            if (d->exists(i, j, 0, no))
+            if (d->is_inside(i, j, 0, no))
             {
-                vector x {d->delta *i - h_2, d->delta *j - h_2, 0};
+                vector x{d->delta * i - h_2, d->delta * j - h_2, 0};
                 if (
                     (x.x > c.x - l.x / 2.0) &&
                     (x.x < c.x + l.x / 2.0) &&
@@ -398,44 +396,41 @@ void rectangel(domain *d, vector c, vector l, double value)
             }
 }
 
-void square(domain *d, vector c, double a)
+void square(domain_t *d, vector c, double a)
 {
     rectangel(d, c, {a, a, a}, 1);
 }
 
-void zalesak_disk(domain *d, vector center)
+void zalesak_disk(domain_t *d, vector center)
 {
     circle(d, center, 0.15);
-    rectangel(d, center - vector{0, 0.1, 0}, {0.05 , 0.3, 0}, 0);
+    rectangel(d, center - vector{0, 0.1, 0}, {0.05, 0.3, 0}, 0);
 }
 
 //-------------------------- velocity fields
 
-void fill_func(domain *d, double *phi, std::function<double(vector)> f)
+void fill_func(domain_t *d, double *phi, std::function<double(vector)> f)
 {
     size_t no;
     /* double h_2 = d->delta / 2.0; */
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
-            if (d->exists(i, j, 0, no))
+            if (d->is_inside(i, j, 0, no))
             {
-                vector x {d->delta * i, d->delta * j, 0};
+                vector x{d->delta * i, d->delta * j, 0};
                 phi[no] = f(x);
             }
 }
 
-void vortex(domain *d, vector x0, double omega)
+void vortex(domain_t *d, vector x0, double omega)
 {
-    fill_func(d, d->uf[0], [x0, omega](vector x)
-    {
+    fill_func(d, d->uf[0], [x0, omega](vector x) {
         return omega * (x0.y - x.y);
     });
-    fill_func(d, d->uf[1], [x0, omega](vector x)
-    {
+    fill_func(d, d->uf[1], [x0, omega](vector x) {
         return omega * (x.x - x0.x);
     });
 }
-
 }
 
 #endif

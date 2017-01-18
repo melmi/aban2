@@ -21,32 +21,32 @@ void solver::write_step(size_t step)
     s << out_path
       << std::setfill('0') << std::setw(6) << step
       << ".vtk";
-    d->write_vtk(s.str());
+    domain->write_vtk(s.str());
 }
 
-solver::solver(domain *_d, std::string _out_path): d(_d), out_path(_out_path)
+solver::solver(domain_t *_d, std::string _out_path): domain(_d), out_path(_out_path)
 {
-    projector = new projection(d);
-    _vof = new vof(d);
-    diffusor = new diffusion(d);
+    projector = new projection(domain);
+    vof = new vof_t(domain);
+    diffusor = new diffusion(domain);
 }
 
 solver::~solver()
 {
     delete projector;
-    delete _vof;
+    delete vof;
     delete diffusor;
 }
 
 void solver::step()
 {
     for (int i = 0; i < NDIRS; ++i)
-        std::copy_n(d->u[i], d->n, d->ustar[i]);
+        std::copy_n(domain->u[i], domain->n, domain->ustar[i]);
 
     std::cout << "      advection " << std::endl;
-    _vof->advect();
-    for (size_t i = 0; i < d->n; ++i)
-        d->nu[i] = d->nu_bar(d->vof[i]);
+    vof->advect();
+    for (size_t i = 0; i < domain->n; ++i)
+        domain->nu[i] = domain->nu_bar(domain->vof[i]);
     std::cout << "      diffusion " << std::endl;
     diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
@@ -61,29 +61,29 @@ void solver::step()
             << "      divergance: " << divergance()
             << std::endl;
 
-    d->t += d->dt;
+    domain->t += domain->dt;
 }
 
 double solver::divergance()
 {
-    auto grad_uf = gradient::of_uf(d);
+    auto grad_uf = gradient::of_uf(domain);
 
     double result = 0;
-    for (size_t i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < domain->n; ++i)
     #ifdef THREE_D
         result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i] + grad_uf[2][2][i]);
     #else
         result += std::abs(grad_uf[0][0][i] + grad_uf[1][1][i]);
     #endif
 
-    domain::delete_var(3, grad_uf);
+    domain_t::delete_var(3, grad_uf);
 
     return result;
 }
 
 void solver::run(size_t nsteps)
 {
-    for (size_t i = 0; i < d->n; ++i) d->rho[i] = d->rho_bar(d->vof[i]);
+    for (size_t i = 0; i < domain->n; ++i) domain->rho[i] = domain->rho_bar(domain->vof[i]);
 
     write_step(0);
 
@@ -93,18 +93,18 @@ void solver::run(size_t nsteps)
                   << std::endl << std::flush;
         step();
 
-        if ((it + 1) % d->write_interval == 0)
-            write_step((it + 1) / d->write_interval);
+        if ((it + 1) % domain->write_interval == 0)
+            write_step((it + 1) / domain->write_interval);
     }
 }
 
 void solver::apply_source_terms()
 {
-    for (size_t i = 0; i < d->n; ++i)
+    for (size_t i = 0; i < domain->n; ++i)
     {
-        d->ustar[0][i] += d->g.cmpnt[0] * d->dt;
-        d->ustar[1][i] += d->g.cmpnt[1] * d->dt;
-        d->ustar[2][i] += d->g.cmpnt[2] * d->dt;
+        domain->ustar[0][i] += domain->g.cmpnt[0] * domain->dt;
+        domain->ustar[1][i] += domain->g.cmpnt[1] * domain->dt;
+        domain->ustar[2][i] += domain->g.cmpnt[2] * domain->dt;
     }
 }
 

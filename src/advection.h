@@ -17,12 +17,12 @@ namespace aban2
 
 class advection
 {
-    domain *d;
+    domain_t *d;
 
 public:
-    advection(domain *_d): d(_d) {}
+    advection(domain_t *_d): d(_d) {}
 
-    void advect(mesh::row *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc);
+    void advect(row_t *row, double *phi, double *grad_dir, flowbc::bc_val_getter bc);
 
     void advect_ustar();
 };

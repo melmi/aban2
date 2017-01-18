@@ -41,7 +41,7 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
-void diffusion::diffuse(mesh::row *row, double *phi, double *D, flowbc::member mem)
+void diffusion::diffuse(row_t *row, double *phi, double *D, flowbc::member mem)
 {
     double *phi_row = d->extract_scalars(row, phi);
     double *d_row = d->extract_scalars(row, D);
