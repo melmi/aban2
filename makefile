@@ -25,12 +25,12 @@ $(TARGET): $(OBJS)
 	@mkdir -p $(OUTDIR)
 	@$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp 
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo Compiling $<
 	@mkdir -p $(OBJDIR)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(DEPDIR)/%.depends: $(SRCDIR)/%.cpp 
+$(DEPDIR)/%.depends: $(SRCDIR)/%.cpp
 	@echo Generating dependencies $<
 	@mkdir -p $(DEPDIR)
 	@$(CXX) -MM $(CXXFLAGS) $< -MT $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$<) -MF $@
