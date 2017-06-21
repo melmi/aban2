@@ -46,7 +46,8 @@ void check_continuety(domain_t *d)
             }
         }
 
-    std::for_each(div, div + d->n, [](double &x) {
+    std::for_each(div, div + d->n, [](double & x)
+    {
         x = std::abs(x);
     });
     cout << "divergance: " << std::accumulate(div, div + d->n, 0) << std::endl;
@@ -167,12 +168,14 @@ void vortex(domain_t *d, vector x0, double omega);
 
 void vof_reconst_accuracy_test()
 {
-    string files[]{
+    string files[]
+    {
         "mesh/cavity10x10.json",
         "mesh/cavity20x20.json",
         "mesh/cavity40x40.json",
         "mesh/cavity80x80.json",
-        "mesh/cavity160x160.json"};
+        "mesh/cavity160x160.json"
+    };
 
     for (auto f : files)
     {
@@ -225,11 +228,13 @@ double error_in_rectangel(domain_t *d, vector c, vector l, double *phi1, double 
 
 void consistent_vof_test()
 {
-    string files[]{
+    string files[]
+    {
         "mesh/cavity20x20.json",
         "mesh/cavity40x40.json",
         "mesh/cavity80x80.json",
-        "mesh/cavity160x160.json"};
+        "mesh/cavity160x160.json"
+    };
 
     for (auto f : files)
     {
@@ -250,7 +255,8 @@ void consistent_vof_test()
         // circle(d, {0.5, 0.5, 0}, 0.15);
         double sigma = 0.15;
         double two_sigma2 = 2 * sigma * sigma;
-        fill_func(d, d->u[0], [x0, two_sigma2](vector x) {
+        fill_func(d, d->u[0], [x0, two_sigma2](vector x)
+        {
             return std::exp(-((x - x0) * (x - x0)) / two_sigma2);
         });
         fill_n(d->u[1], d->n, 0);
@@ -296,7 +302,8 @@ void zalesak_disk_rotation_test()
     // fill_func(d, d->ustar[0], [](vector x) {return x* vector{1, 1, 0};});
     // square(d, {0.5, 0.75, 0}, 0.15);
     zalesak_disk(d);
-    fill_func(d, d->u[0], [](vector x) {
+    fill_func(d, d->u[0], [](vector x)
+    {
         vector x0{0.5, 0.75, 0};
         double sigma2 = 0.2 * 0.2;
         return std::exp(-((x - x0) * (x - x0)) / sigma2);
@@ -341,7 +348,7 @@ void zalesak_disk_rotation_test()
 void circle(domain_t *d, vector x0, double r)
 {
     double h_2 = d->delta / 2, r2 = r * r, v = d->delta * d->delta * d->delta;
-    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, {-h_2, h_2, 0}, {-h_2, -h_2, 0}};
+    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
     vector h{d->delta, d->delta, d->delta};
 
     size_t no;
@@ -350,7 +357,7 @@ void circle(domain_t *d, vector x0, double r)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->is_inside(i, j, 0, no))
             {
-                vector x{d->delta * i - h_2, d->delta * j - h_2, 0};
+                vector x{d->delta * i + h_2, d->delta * j + h_2, 0};
                 vector ps[] = {x - x0 + half[0], x - x0 + half[1], x - x0 + half[2], x - x0 + half[3]};
                 double l2[] = {ps[0].l2(), ps[1].l2(), ps[2].l2(), ps[3].l2()};
 
@@ -386,12 +393,27 @@ void rectangel(domain_t *d, vector c, vector l, double value)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->is_inside(i, j, 0, no))
             {
-                vector x{d->delta * i - h_2, d->delta * j - h_2, 0};
+                vector x{d->delta * i + h_2, d->delta * j + h_2, 0};
                 if (
                     (x.x > c.x - l.x / 2.0) &&
                     (x.x < c.x + l.x / 2.0) &&
                     (x.y > c.y - l.y / 2.0) &&
                     (x.y < c.y + l.y / 2.0))
+                    d->vof[no] = value;
+            }
+}
+
+void rectangel_by_bounds(domain_t *d, vector ll, vector tr, double value)
+{
+    double h_2 = d->delta / 2.0;
+    size_t no;
+
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->is_inside(i, j, 0, no))
+            {
+                vector x{d->delta * i + h_2, d->delta * j + h_2, 0};
+                if ( (x.x > ll.x) && (x.x < tr.x) && (x.y > ll.y) && (x.y < tr.y))
                     d->vof[no] = value;
             }
 }
@@ -412,22 +434,24 @@ void zalesak_disk(domain_t *d, vector center)
 void fill_func(domain_t *d, double *phi, std::function<double(vector)> f)
 {
     size_t no;
-    /* double h_2 = d->delta / 2.0; */
+    double h_2 = d->delta / 2.0;
     for (size_t i = 0; i < d->ndir[0]; ++i)
         for (size_t j = 0; j < d->ndir[1]; ++j)
             if (d->is_inside(i, j, 0, no))
             {
-                vector x{d->delta * i, d->delta * j, 0};
+                vector x{d->delta * i + h_2, d->delta * j + h_2, 0};
                 phi[no] = f(x);
             }
 }
 
 void vortex(domain_t *d, vector x0, double omega)
 {
-    fill_func(d, d->uf[0], [x0, omega](vector x) {
+    fill_func(d, d->uf[0], [x0, omega](vector x)
+    {
         return omega * (x0.y - x.y);
     });
-    fill_func(d, d->uf[1], [x0, omega](vector x) {
+    fill_func(d, d->uf[1], [x0, omega](vector x)
+    {
         return omega * (x.x - x0.x);
     });
 }
