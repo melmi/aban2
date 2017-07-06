@@ -59,7 +59,7 @@ public:
     //
 
     double **uf, * *u, * *ustar, *p;
-    double rho0, rho1, nu0, nu1;
+    double rho0, rho1, mu0, mu1;
     double *rho, *nu;
     double *vof, * *nb;
     double dt, tend;
@@ -83,7 +83,7 @@ public:
     static void delete_var(size_t rank, void *v);
 
     double rho_bar(double _vof);
-    double nu_bar(double _vof);
+    double nu_bar(double _vof, double rho_bar);
 
 private:
     inline size_t idx(size_t i, size_t j, size_t k, size_t ii, size_t jj, size_t kk);

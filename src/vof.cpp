@@ -156,6 +156,9 @@ namespace aban2
         vector flux_ustar0 = d->rho0 * (ustar * v0 + vector(q0 * grad[0], q0 * grad[1], q0 * grad[2]));
         vector flux_ustar1 = d->rho1 * (ustar * v1 + vector(q1 * grad[0], q1 * grad[1], q1 * grad[2]));
 
+        // vector flux_ustar0 = d->rho0 * ustar * v0;
+        // vector flux_ustar1 = d->rho1 * ustar * v1;
+
         return std::make_tuple(v1, flux_ustar0, flux_ustar1);
     }
 

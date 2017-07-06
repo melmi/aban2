@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
     for (size_t i = 0; i < d->n; ++i)
     {
         d->rho[i] = d->rho_bar(d->vof[i]);
-        d->nu[i] = d->nu_bar(d->vof[i]);
+        d->nu[i] = d->nu_bar(d->vof[i], d->rho[i]);
     }
 
     std::cout << "before run" << std::endl << std::flush;

@@ -10,6 +10,7 @@
 namespace aban2
 {
 
+// https://en.wikibooks.org/wiki/Algorithm_Implementation/Linear_Algebra/Tridiagonal_matrix_algorithm
 void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N, const double *a, const double *b, double *c)
 {
     /* unsigned integer of same size as pointer */
@@ -37,7 +38,7 @@ void diffusion::solve_tridiagonal_in_place_destructive(double *x, const size_t N
     }
 
     /* loop from N - 2 to 0 inclusive, safely testing loop end condition */
-    for (in = N - 1; in-- > 0; )
+    for (in = N - 1; in-- > 0;)
         x[in] = x[in] - c[in] * x[in + 1];
 }
 
@@ -50,21 +51,39 @@ void diffusion::diffuse(row_t *row, double *phi, double *D, flowbc::member mem)
     double dt_dx2 = dt / dx / dx;
 
     double *aa = new double[n], *bb = new double[n], *cc = new double[n];
+    // a: subdiagonal, b: the main diagonal, c: superdiagonal
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 1; i < n - 1; ++i)
     {
-        aa[i] = cc[i] = -d_row[i] * dt_dx2;
-        bb[i] = 1.0 + 2.0 * d_row[i] * dt_dx2;
+        double d_e = (d_row[i + 1] + d_row[i]) / 2;
+        double d_w = (d_row[i] + d_row[i - 1]) / 2;
+
+        aa[i] = -d_w * dt_dx2;
+        bb[i] = 1.0 + (d_w + d_e) * dt_dx2;
+        cc[i] = -d_e * dt_dx2;
     }
 
-    auto startbc = (d->boundaries[(int)row->start_code]->*mem)->desc(d->cellno(row, 0         ), row->dir);
-    auto endbc   = (d->boundaries[(int)row->end_code  ]->*mem)->desc(d->cellno(row, row->n - 1), row->dir);
+    // start bc
+    {
+        double d_e = (d_row[0] + d_row[1]) / 2;
+        double d_w = d_row[0];
 
-    bb[0] = 1.0 - (2.0 * startbc.sw - 3.0) * d_row[0] * dt_dx2;
-    phi_row[0] += 2.0 * d_row[0] * dt_dx2 * startbc.cte;
+        auto startbc = (d->boundaries[(int)row->start_code]->*mem)->desc(d->cellno(row, 0), row->dir);
+        cc[0] = -d_e * dt_dx2;
+        bb[0] = 1.0 - ((d_e + d_w) * (startbc.sw - 1) - d_w) * dt_dx2;
+        phi_row[0] += 2.0 * d_w * dt_dx2 * startbc.cte;
+    }
 
-    bb[n - 1] = 1.0 - (2.0 * endbc.sw - 3.0) * d_row[n - 1] * dt_dx2;
-    phi_row[n - 1] += 2.0 * d_row[n - 1] * dt_dx2 * endbc.cte;
+    // end bc
+    {
+        double d_e = d_row[n - 1];
+        double d_w = (d_row[n - 2] + d_row[n - 1]) / 2;
+
+        auto endbc = (d->boundaries[(int)row->end_code]->*mem)->desc(d->cellno(row, row->n - 1), row->dir);
+        aa[n - 1] = -d_w * dt_dx2;
+        bb[n - 1] = 1.0 - ((d_e + d_w) * (endbc.sw - 1) - d_e) * dt_dx2;
+        phi_row[n - 1] += 2.0 * d_e * dt_dx2 * endbc.cte;
+    }
 
     solve_tridiagonal_in_place_destructive(phi_row, n, aa, bb, cc);
 
@@ -84,6 +103,4 @@ void diffusion::diffuse_ustar()
             for (size_t icmpnt = 0; icmpnt < NDIRS; ++icmpnt)
                 diffuse(d->rows[dir] + irow, d->ustar[icmpnt], d->nu, flowbc::umembers[icmpnt]);
 }
-
 }
-

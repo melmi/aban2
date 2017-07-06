@@ -45,9 +45,9 @@ void solver::step()
 
     std::cout << "      advection " << std::endl;
     vof->advect();
-    for (size_t i = 0; i < domain->n; ++i)
-        domain->nu[i] = domain->nu_bar(domain->vof[i]);
     std::cout << "      diffusion " << std::endl;
+    for (size_t i = 0; i < domain->n; ++i)
+        domain->nu[i] = domain->nu_bar(domain->vof[i], domain->rho[i]);
     diffusor->diffuse_ustar();
     std::cout << "      source terms " << std::endl;
     apply_source_terms();

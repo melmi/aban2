@@ -53,8 +53,8 @@ domain_t::domain_t(Json::Value *root)
     tend = root->get("tend", 1).asDouble();
     rho0 = root->get("rho0", 1000).asDouble();
     rho1 = root->get("rho1", 1000).asDouble();
-    nu0 = root->get("nu0", 1e-3).asDouble();
-    nu1 = root->get("nu1", 1e-3).asDouble();
+    mu0 = root->get("mu0", 1e-3).asDouble();
+    mu1 = root->get("mu1", 1e-3).asDouble();
     Json::Value gnode = (*root)["g"];
     g = vector(gnode[0].asDouble(), gnode[1].asDouble(), gnode[2].asDouble());
     write_interval = root->get("write_interval", 1).asInt();
@@ -259,9 +259,10 @@ double domain_t::rho_bar(double _vof)
     return _vof * rho1 + (1.0 - _vof) * rho0;
 }
 
-double domain_t::nu_bar(double _vof)
+double domain_t::nu_bar(double _vof, double rho_bar)
 {
-    return _vof * nu1 + (1.0 - _vof) * nu0;
+    double mu_bar=1.0/(_vof / mu1 + (1.0 - _vof) / mu0);
+    return mu_bar/rho_bar;
 }
 
 /////////////////////////////////////////////////////////////
