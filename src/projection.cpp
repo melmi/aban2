@@ -111,6 +111,7 @@ void projection::solve_p()
 {
     auto pmatrix = create_matrix();
     auto rhs = get_rhs();
+    std::cout << "                   solving matrix" << std::endl;
     auto niter = cg(pmatrix, d->p, rhs, d->n, lpw::precond_t::jacobi, 1.2);
     std::cout << "                   #iterations: " << niter << std::endl;
     delete[] rhs;
