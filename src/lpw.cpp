@@ -118,6 +118,11 @@ int general_solve(matrix_t*a, double*x, double*b, int max_iter, precond_t p, dou
     return GetLastNoIter();
 }
 
+int bicgstab(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
+{
+    return general_solve(a, x, b, max_iter, p, omega, BiCGSTABIter);
+}
+
 int cg(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega)
 {
     return general_solve(a, x, b, max_iter, p, omega, CGIter);

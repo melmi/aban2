@@ -26,6 +26,7 @@ enum class precond_t
 };
 
 int cg(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega);
+int bicgstab(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega);
 int sor_forward(matrix_t*a, double*x, double*b, int max_iter, precond_t p, double omega);
 
 }
