@@ -45,10 +45,9 @@ class vof_t
     inline std::tuple<double, vector, vector> get_flux(row_t *row, size_t i, double udt, double ***grad_ustar);
     inline std::tuple<double, vector, vector> get_bc_flux(row_t *row, double ***grad_ustar, bcside side);
     void advect_row(row_t *row, double ***grad_ustar);
-    void correct_vofs(size_t dir);
     void calculate_vof_masses_from_vars();
     void calculate_ustar_masses_from_vars(double ***grad_ustar);
-    void calculate_vars_from_masses();
+    void calculate_vars_from_masses(size_t dir);
 public:
     void calculate_normals();
     vof_t(domain_t *domain);

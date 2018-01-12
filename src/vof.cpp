@@ -257,18 +257,6 @@ namespace aban2
         delete[] row_rhou1[2];
     }
 
-    void vof_t::correct_vofs(size_t dir)
-    {
-        auto grad_uf = gradient::of_uf_dir(d, dir);
-
-        // applying correction terms
-        for (size_t i = 0; i < d->n; ++i)
-            if (original_vof[i] > 0.5)
-                mass[i] += grad_uf[i] * d->vcell * d->dt;
-
-        delete[] grad_uf;
-    }
-
     void vof_t::calculate_normals()
     {
         size_t no;
@@ -326,15 +314,18 @@ namespace aban2
         }
     }
 
-    void vof_t::calculate_vars_from_masses()
+    void vof_t::calculate_vars_from_masses(size_t dir)
     {
+        auto grad_uf = gradient::of_uf_dir(d, dir);
+
         for (size_t i = 0; i < d->n; ++i)
         {
-            d->vof[i] = mass[i] / d->vcell;
+            auto v = d->vcell * (1 - d->dt * grad_uf[i]);
+            d->vof[i] = mass[i] / v;
             d->rho[i] = d->rho_bar(d->vof[i]);
-            d->ustar[0][i] = (rhou0[0][i] / d->rho0 + rhou1[0][i] / d->rho1) / d->vcell;
-            d->ustar[1][i] = (rhou0[1][i] / d->rho0 + rhou1[1][i] / d->rho1) / d->vcell;
-            d->ustar[2][i] = (rhou0[2][i] / d->rho0 + rhou1[2][i] / d->rho1) / d->vcell;
+            d->ustar[0][i] = (rhou0[0][i] / d->rho0 + rhou1[0][i] / d->rho1) / v;
+            d->ustar[1][i] = (rhou0[1][i] / d->rho0 + rhou1[1][i] / d->rho1) / v;
+            d->ustar[2][i] = (rhou0[2][i] / d->rho0 + rhou1[2][i] / d->rho1) / v;
         }
     }
 
@@ -361,10 +352,8 @@ namespace aban2
             for (size_t irow = 0; irow < d->nrows[dir]; ++irow)
                 advect_row(d->rows[dir] + irow, grad_ustar);
 
-            correct_vofs(dir);
-
             // average
-            calculate_vars_from_masses();
+            calculate_vars_from_masses(dir);
 
             delete_reconsts();
             domain_t::delete_var(3, grad_ustar);
