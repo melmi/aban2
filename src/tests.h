@@ -455,6 +455,98 @@ void vortex(domain_t *d, vector x0, double omega)
         return omega * (x.x - x0.x);
     });
 }
+
+//-------------------------- solitary wave
+// http://test.interface.free.fr/Case33.pdf
+
+double solitary_eta(double H, double d, double x)
+{
+    double e = H / d;
+    double a = std::sqrt(3./4.*e)*(1.-(5./8.)*e+(71./128.)*e*e);
+    double s = 1. / std::cosh(a*x);
+    double t = std::tanh(a*x);
+    double e2=e*e, s2=s*s, t2=t*t;
+    double e3=e2*e, s4=s2*s2;
+
+    double eta = d * (e*s2 - 3./4.*e2*s2*t2 +e3*( 5./8.*s2*t2 - 101./80.*s4*t2 ));
+    return eta;
 }
 
+vector solitary_speed(double H, double d, double g, double x, double z)
+{
+    double _gd = std::sqrt(g*d);
+    double e = H / d;
+    double a = std::sqrt(3./4.*e)*(1.-(5./8.)*e+(71./128.)*e*e);
+    double s = 1. / std::cosh(a*x);
+    double t = std::tanh(a*x);
+    double zd = z/d;
+    double e2=e*e, s2=s*s, zd2=zd*zd;
+    double e3=e2*e, s4=s2*s2, s6=s2*s2*s2, zd4=zd2*zd2;
+
+    double u =  _gd * 
+                ( e*s2 
+                - e2 * ( -1./4.*s2 + s4 + zd2*(3./2.*s2-9./4.*s4))
+                - e3 * ( 19./4.*s2 + 1./5.*s4 - 6./5.*s6 + 
+                       + zd2 * (-3./2.*s2 - 15./4.*s4 + 15./2.*s6)
+                       + zd4 * (-3./8.*s2 + 45./16.*s4 -45./16*s6)));
+    double v =  _gd * std::sqrt(3.*e) * zd * t *
+                ( - e*s2 
+                + e2 * ( 3./8. * s2 + 2.*s4 + zd2*(31./2.*s2-3./2.*s4))
+                + e3 * ( 49./640.*s2 - 17./20.*s4 - 18./5.*s6 + 
+                       + zd2 * (-13./16.*s2 - 25./16.*s4 + 15./2.*s6)
+                       + zd4 * (-3./40.*s2 + 9./8.*s4 -27./16*s6)));
+
+    return vector{u,0,v};
+}
+
+void solitary(domain_t *d, double H, double dd, double x0, double z0)
+{
+    double h_2 = d->delta / 2;
+    vector h{d->delta, d->delta, d->delta};
+    vector half[] = {{h_2, h_2, 0}, {h_2, -h_2, 0}, { -h_2, h_2, 0}, { -h_2, -h_2, 0}};
+    vector X0{x0, z0, 0};
+
+    size_t no;
+    for (size_t i = 0; i < d->ndir[0]; ++i)
+        for (size_t j = 0; j < d->ndir[1]; ++j)
+            if (d->is_inside(i, j, 0, no))
+            {
+                vector X{d->delta * i + h_2 - x0, d->delta * j + h_2 - z0, 0};
+                vector ps[] = {X + half[0], X + half[1], X + half[2], X + half[3]};
+                // transformation of cell?
+                double ys[] = {ps[0].y, ps[1].y, ps[2].y, ps[3].y};
+                
+                auto eta = solitary_eta(H, dd, X.x);
+                if (*std::min_element(begin(ys), end(ys)) > eta)
+                {
+                    d->vof[no] = 0;
+                    continue;
+                }
+                else if (*std::max_element(begin(ys), end(ys)) < eta)
+                {
+                    d->vof[no] = 1;
+                    // continue;
+                }
+                else
+                {
+                    auto min_y = *std::min_element(begin(ys), end(ys));
+                    d->vof[no] = (eta - min_y) / d->delta;
+                    // vector n{0,1,0};
+                    // n.normalize();
+                    // n.to_data(d->u, no);
+                    // size_t idx = min_element_index(l2, l2 + 4);
+                    // double alpha = r - ps[idx] * n;
+                    // volreconst *reconst = volreconst::from_alpha(h, n, alpha);
+                    // d->vof[no] = reconst->get_volume() / v;
+                    // delete reconst;
+                }
+
+                // specify velocity considering transformation
+                auto vel = solitary_speed(H, dd, d->g.l(), X.x, X.y);
+                d->u[0][no] = vel.x;
+                d->u[1][no] = vel.z;
+            }
+}
+
+}
 #endif
